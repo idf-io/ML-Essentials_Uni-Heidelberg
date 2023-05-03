@@ -1,3 +1,9 @@
+# Courses
+
+- [Introduction to scientific python - Fundamentals of machine learning WS21-22](https://mampf.mathi.uni-heidelberg.de/lessons/783)
+- [Introduction to numpy - Accompanying resources to introduction to scientific python](https://github.com/ukoethe/python-numpy-intro/tree/master)
+
+
 # Literature
 
 ## Books
