@@ -5,7 +5,7 @@ Topics covered:
 - [x] error rate
 - [x] false positive/negative rate,
 - [x] precision/recall
-- [x] simple classifiers (threshold, perceptron & linear decision boundary, nearest neighbor - Voronoi decision boundary)
+- [x] simple classifiers (threshold, linear decision boundary & nearest neighbor - Voronoi decision boundary)
 - [x] Bayes theorem (prior, likelihood, posterior)
 - [x] generative and discriminative classifiers
 
