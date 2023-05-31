@@ -1,16 +1,13 @@
 name: exercise03
 channels:
 -   pytorch
--   nvidia
 -   conda-forge
 -   conda
 dependencies:
 -   python>3.8
--   scikit-learn
 -   openpyxl
 -   jupyterlab
 -   numpy
 -   matplotlib
 -   pytorch
 -   torchvision
--   tqdm
