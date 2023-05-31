@@ -1,0 +1,14 @@
+name: exercise03
+channels:
+-   pytorch
+-   conda-forge
+-   conda
+dependencies:
+-   python>3.8
+-   scikit-learn
+-   openpyxl
+-   jupyterlab
+-   numpy
+-   matplotlib
+-   pytorch
+-   torchvision
