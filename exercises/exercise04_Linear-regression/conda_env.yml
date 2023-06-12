@@ -1,0 +1,11 @@
+name: exercise03
+channels:
+-   conda-forge
+-   conda
+dependencies:
+-   python>3.8
+-   scipy
+-   openpyxl
+-   jupyterlab
+-   numpy
+-   matplotlib
