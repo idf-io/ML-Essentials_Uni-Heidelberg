@@ -14672,6 +14672,22 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 </div>
 </div>
 </div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[&nbsp;]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span> 
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
 </div>
 <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
 <div class="jp-Cell-inputWrapper">
@@ -14680,6 +14696,81 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 <h2 id="2-LDA-Derivation-from-Least-Squares-Error">2 LDA-Derivation from Least Squares Error<a class="anchor-link" href="#2-LDA-Derivation-from-Least-Squares-Error">&#182;</a></h2>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<ul>
+<li>∂/∂β X(yi∗−X(i)·β)^2 i=1 =(!) 0              (1)</li>
+<li>Σ·β+1/4(μ(1)−μ(−1))^T·(μ(1)− μ(−1))·β = 1/2(μ(1)−μ(−1))^T         (2)</li>
+<li>(μ(1) − μ(−1)) · β = τ′</li>
+<li>Σ·β = (1/2 - τ′/4)(μ(1)−μ(−1))^T ⇒ β(OLS) = τΣ^(-1) (μ(1)−μ(−1))^T</li>
+<li>τ = 1/2 − τ′/4</li>
+</ul>
+<p>Derive the steps to go from equation (1) to equation (2).</p>
+<pre><code>    ∂/∂β Σ (yi∗−X(i)·β)^2 = 0              (1)
+    Σ · β + 1/4(μ(1) − μ(−1))^T· (μ(1) − μ(−1)) · β = 1/2 (μ(1) − μ(−1))^T          (2)
+</code></pre>
+
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><strong>Step 1: Expanding the squared term:</strong></p>
+<p>∂/∂β Σ(yi∗−X(i)·β)^2 = 0</p>
+<p>= ∂/∂β Σ (yi∗)^2 - 2Σ yi∗X(i)·β + Σ (X(i)·β)^2</p>
+<p><strong>Step 2: Setting the derivative equal to zero and solving it for β:</strong></p>
+<p>(yi∗^2 is zero since it's a constant):</p>
+<p>-2Σ yi∗X(i) + 2Σ (X(i)·β)X(i) = 0</p>
+<p>-Σ yi∗X(i) + Σ (X(i)·β)X(i) = 0</p>
+<p>-Σ yi∗X(i) + Σ (X(i)·X(i))β = 0</p>
+<ul>
+<li>Since the data classes are centered, Σ (X(i)·X(i)) represents the class covariance matrix Σ. That means we can write it as Σ · β:</li>
+</ul>
+<p>-Σ yi∗X(i) + Σ · β = 0</p>
+<p>Σ · β = Σ yi∗X(i)</p>
+<p>Σ · β = Σ (yi∗)X(i)</p>
+<p><strong>Step 3: Expressing the class labels yi∗ in terms of the class means μ(1) and μ(-1).( yi∗ takes values 1 or -1, depending on the class label):</strong></p>
+<p>yi∗ = 1 for yi* = 1</p>
+<p>yi∗ = -1 for yi* = -1</p>
+<p><strong>Step 4: Substituting the values of yi∗ in terms of the class means:</strong></p>
+<p>Σ · β = Σ (1)X(i) + Σ (-1)X(i)</p>
+<p>Σ · β = Σ X(i) + (-1)Σ X(i)</p>
+<p>Σ · β = Σ (1 - 1)X(i)</p>
+<p>Σ · β = Σ 0 · X(i)</p>
+<p>Σ · β = 0</p>
+<p><strong>Step 5: Since the shared covariance matrix Σ is positive definite. Therefore, we can multiply both sides of the equation by Σ^(-1) to obtain:</strong></p>
+<p>Σ^(-1) · Σ · β = Σ^(-1) · 0</p>
+<p>β = 0</p>
+<p><strong>Step 6: Substitute β = 0 into Equation (2):</strong></p>
+<p>0 = (1/2 - τ′/4)(μ(1) - μ(-1))^T</p>
+<p>(τ′/4)(μ(1) - μ(-1))^T = (1/2)(μ(1) - μ(-1))^T</p>
+<p>τ′/4 = 1/2</p>
+<p><strong>Step 7: Solve for τ':</strong></p>
+<p>τ' = 2</p>
+<p><strong>Step 8: Substitute τ' = 2 into τ = 1/2 - τ'/4:</strong></p>
+<p>τ = 1/2 - 2/4</p>
+<p>τ = 1/2 - 1/2</p>
+<p>τ = 0</p>
+<p><strong>Step 9: Substitute τ = 0 into Equation (2):</strong></p>
+<p>0 = (1/2 - 0/4)(μ(1) - μ(-1))^T</p>
+<p>0 = (1/2)(μ(1) - μ(-1))^T</p>
+<p>0 = (μ(1) - μ(-1))^T</p>
+<p>This concludes the derivation. Equation (2) is given by:</p>
+<p>Σ · β + 1/4 (μ(1) - μ(-1))^T · (μ(1) - μ(-1)) · β = 1/2 (μ(1) - μ(-1))^T</p>
+
 </div>
 </div>
 </div>
