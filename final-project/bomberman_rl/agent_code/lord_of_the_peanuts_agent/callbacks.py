@@ -2,8 +2,9 @@ import os
 import pickle
 import numpy as np
 
+from settings import BOMB_POWER, COLS
 
-ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT', 'BOMB']
+ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT']
 
 def setup(self):
     self.epsilon = 1.0
