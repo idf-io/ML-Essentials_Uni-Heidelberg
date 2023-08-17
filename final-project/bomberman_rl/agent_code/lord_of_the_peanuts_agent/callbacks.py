@@ -53,3 +53,22 @@ def state_to_features(game_state: dict) -> np.array:
     features.append(self_position[1])
 
     return np.array(features)
+
+
+def field2bomb(field, bombs, power=BOMB_POWER, board_size=COLS):
+
+    """
+    Convert the field array to include tiles where the explosion takes place next move.
+    """
+
+    bomb_mask = np.zeros([board_size, board_size])
+    #0 dimension indicates the position of bomb,1 dimension indicates the time before explosion (0 right before explosion)
+    for bomb in bombs:
+        if bomb[1] == 0:
+            bomb_mask[max(bomb[0][0]-power,0):min(bomb[0][0]+power+1,board_size),bomb[0][1]] = 1
+            bomb_mask[bomb[0][0]][max(bomb[0][1]-power,0):min(bomb[0][1]+power+1,board_size)] = 1
+
+    new_field = (field == 0) & np.array(bomb_mask, dtype=bool)
+    new_field = np.where(new_field, 2, field)
+
+    return new_field
