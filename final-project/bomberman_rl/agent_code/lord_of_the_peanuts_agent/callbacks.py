@@ -38,25 +38,32 @@ def state_to_features(game_state: dict) -> np.array:
 
     field = game_state["field"]
     self_position = game_state["self"][3]
+    new_field = field2bomb(game_state)
+    new_field = field2coin(game_state, new_field)
 
     features = []
-    for x in range(field.shape[0]):
-        for y in range(field.shape[1]):
-            cell = field[x, y]
-            if cell == -1:
+    for x in range(new_field.shape[0]):
+        for y in range(new_field.shape[1]):
+            cell = new_field[x, y]
+            if cell == 2:
                 features.extend([1, 0, 0])
             elif cell == 1:
                 features.extend([0, 1, 0])
-            else:
+            elif cell == 0:
+                features.extend([0, 1, 1])
+            elif cell == -1:
+                features.extend([1, 1, 0])
+            elif cell == 3:
                 features.extend([0, 0, 1])
+            else:
+                features.extend([1, 1, 1])
 
     features.append(self_position[0])
     features.append(self_position[1])
-
     return np.array(features)
 
 
-def field2bomb(field, bombs, power=BOMB_POWER, board_size=COLS):
+def field2bomb(game_state: dict, power=BOMB_POWER, board_size=COLS):
 
     """
     Convert the field array to include tiles where the explosion takes place next move.
@@ -64,12 +71,26 @@ def field2bomb(field, bombs, power=BOMB_POWER, board_size=COLS):
 
     bomb_mask = np.zeros([board_size, board_size])
     #0 dimension indicates the position of bomb,1 dimension indicates the time before explosion (0 right before explosion)
-    for bomb in bombs:
+    for bomb in game_state["bombs"]:
         if bomb[1] == 0:
             bomb_mask[max(bomb[0][0]-power,0):min(bomb[0][0]+power+1,board_size),bomb[0][1]] = 1
             bomb_mask[bomb[0][0]][max(bomb[0][1]-power,0):min(bomb[0][1]+power+1,board_size)] = 1
 
-    new_field = (field == 0) & np.array(bomb_mask, dtype=bool)
-    new_field = np.where(new_field, 2, field)
+    new_field = (game_state["field"] == 0) & np.array(bomb_mask, dtype=bool)
+    new_field = np.where(new_field, 2, game_state["field"])
+
+    return new_field
+
+def field2coin(game_state: dict, new_field):
+    """
+    :param game_state: current state of the game
+    :param new_field: field with walls, crates and bombs
+    :return: new_field with coin locations
+    """
+    coins = game_state["coins"]
+
+    for coin in coins:
+        if new_field[coin[0]][coin[1]] == 0 :
+            new_field[coin[0]][coin[1]] = 3
 
     return new_field
