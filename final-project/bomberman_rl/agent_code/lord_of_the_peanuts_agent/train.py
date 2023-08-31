@@ -77,7 +77,7 @@ def reward_from_events(self, events: List[str]) -> float:
         e.SURVIVED_ROUND: 1.0,
         e.COIN_FOUND: 1.0,
         e.GOT_KILLED: -2.0,
-        e.CRATE_DESTROYED: 1.0,
+        e.CRATE_DESTROYED: 2.0,
         PLACEHOLDER_EVENT: -0.1
     }
     reward_sum = 0.0
@@ -86,3 +86,4 @@ def reward_from_events(self, events: List[str]) -> float:
             reward_sum += game_rewards[event]
     self.logger.info(f"Awarded {reward_sum} for events {', '.join(events)}")
     return reward_sum
+

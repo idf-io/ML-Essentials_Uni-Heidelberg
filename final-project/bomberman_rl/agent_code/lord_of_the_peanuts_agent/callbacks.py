@@ -1,10 +1,10 @@
 import os
 import pickle
 import numpy as np
-
+import logging
 from settings import BOMB_POWER, COLS
 
-ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT']
+ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT', 'BOMB']
 
 def setup(self):
     self.epsilon = 1.0
@@ -32,7 +32,7 @@ def act(self, game_state: dict) -> str:
 
     return np.random.choice(best_actions)
 
-def state_to_features(game_state: dict) -> np.array:
+def state_to_features_ori(game_state: dict) -> np.array:
     if game_state is None:
         return None
 
@@ -61,6 +61,54 @@ def state_to_features(game_state: dict) -> np.array:
 
     features.append(self_position[0])
     features.append(self_position[1])
+    return np.array(features)
+
+
+def state_to_features(game_state: dict) -> np.array:
+
+    if game_state is None:
+        return None
+
+    #reset the field to accelerate the algorithm
+    field = game_state["field"]
+    self_position = game_state["self"][3]
+    new_field = field2bomb(game_state)
+    new_field = field2coin(game_state, new_field)
+
+    # !!think more about the features, such as vector to all coins
+
+    # reduce the feature
+    # layers=0 means that only consider the information of actual field
+    layers=1
+    features = []
+    #max(bomb[0][0]-power,0):min(bomb[0][0]+power+1
+    for x in range(self_position[0]-layers,self_position[0]+layers+1):
+        for y in range(self_position[1]-layers,self_position[1]+layers+1):
+            #-1 means the border of the map
+            #-2 means expetional situation
+            #we wont have -2
+            #we do this because we want feature have a fixed length
+            #print(x,y)
+            if (x<0 or x>=new_field.shape[0] or y<0 or y>=new_field.shape[1]):
+                cell=-2
+            else:
+                cell = new_field[x, y]
+            if cell == 2:
+                features.extend([1, 0, 0])
+            elif cell == 1:
+                features.extend([0, 1, 0])
+            elif cell == 0:
+                features.extend([0, 1, 1])
+            elif cell == -1:
+                features.extend([1, 1, 0])
+            elif cell == 3:
+                features.extend([0, 0, 1])
+            else:
+                features.extend([1, 1, 1])
+
+    features.append(self_position[0])
+    features.append(self_position[1])
+    #print(features)
     return np.array(features)
 
 
