@@ -57,10 +57,11 @@ def state_to_features(game_state: dict) -> np.array:
     self_position = game_state["self"][3]
     new_field = field2bomb(game_state)
     new_field = field2coin(game_state, new_field)
+    layers = 1
 
     features = []
-    for x in range(new_field.shape[0]):
-        for y in range(new_field.shape[1]):
+    for x in range(self_position[0]-layers,self_position[0]+layers+1):
+        for y in range(self_position[1]-layers,self_position[1]+layers+1):
             cell = new_field[x, y]
             if cell == 2:
                 features.extend([1, 0, 0])
