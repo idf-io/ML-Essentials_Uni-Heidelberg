@@ -17,8 +17,10 @@ section Lecture phase
 Lectures: 18-04-2023, 31-08-2023
 
 section Lecture free phase
-Final project: crit, 10-09-2023, 29-09-2023
-Report: crit, 30-09-2023, 06-10-2023
+Final project: crit, 20-08-2023, 25-09-2023
+Hand in agent: milestone, 25-09-2023
+Report: crit, 25-09-2023, 02-10-2023
+Hand in report: milestone, 02-10-2023
 ```
 
 ## Syllabus
