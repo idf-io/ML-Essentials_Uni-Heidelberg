@@ -14,12 +14,12 @@ def setup(self):
     self.discount_factor = 0.9  # Discount factor for future rewards
 
     # Check if Q-table file exists, and load it if available
-    if self.train or not os.path.isfile("my-saved-qtable.pkl"):
+    if self.train or not os.path.isfile("my-saved-qtable-2.pkl"):
         self.logger.info("Setting up Q-table from scratch.")
         self.q_table = {}  # Initialize Q-table
     else:
         self.logger.info("Loading Q-table from saved state.")
-        with open("my-saved-qtable.pkl", "rb") as file:
+        with open("my-saved-qtable-2.pkl", "rb") as file:
             self.q_table = pickle.load(file)
 
 # Softmax function to convert Q-values into probabilities
@@ -36,6 +36,12 @@ def act(self, game_state: dict) -> str:
 
     if self.train:
         q_values = self.q_table.get(tuple(state), {a: 0.0 for a in ACTIONS})
+
+        # Make sure all actions have Q-values
+        for action in ACTIONS:
+            if action not in q_values:
+                q_values[action] = 0.0
+
         probabilities = softmax(list(q_values.values()))
         chosen_action = np.random.choice(ACTIONS, p=probabilities)
         return chosen_action

@@ -4,18 +4,18 @@ import numpy as np
 import logging
 from settings import BOMB_POWER, COLS
 
-ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT', 'BOMB']
+ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT']
 
 def setup(self):
     self.epsilon = 1.0
     self.learning_rate = 0.1  # Learning rate for Q-learning
     self.discount_factor = 0.9  # Discount factor for future rewards
-    if self.train or not os.path.isfile("my-saved-qtable.pkl"):
+    if self.train or not os.path.isfile("my-saved-qtable-1.pkl"):
         self.logger.info("Setting up Q-table from scratch.")
         self.q_table = {} # Initialize Q-table
     else:
         self.logger.info("Loading Q-table from saved state.")
-        with open("my-saved-qtable.pkl", "rb") as file:
+        with open("my-saved-qtable-1.pkl", "rb") as file:
             self.q_table = pickle.load(file)
 
 def act(self, game_state: dict) -> str:

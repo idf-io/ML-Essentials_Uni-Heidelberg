@@ -12,7 +12,7 @@ Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'
 TRANSITION_HISTORY_SIZE = 5
 RECORD_ENEMY_TRANSITIONS = 1.0
 PLACEHOLDER_EVENT = "PLACEHOLDER"
-ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT', 'BOMB']
+ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT']
 
 
 def setup_training(self):
@@ -20,11 +20,11 @@ def setup_training(self):
     self.transitions = deque(maxlen=TRANSITION_HISTORY_SIZE)
 
     # Q-learning hyperparameters
-    self.learning_rate = 0.1
+    self.learning_rate = 0.01
     self.discount_factor = 0.95
     self.epsilon = 1.0  # Exploration factor
     self.epsilon_decay = 0.9  # Decay rate for exploration
-    self.min_epsilon = 0.05  # Minimum exploration factor
+    self.min_epsilon = 0.1  # Minimum exploration factor
     self.gamma = 0.95  # Discount factor for rewards in the Bellman equation
     self.alpha = 0.1  # Learning rate for Q-value updates
 
@@ -56,7 +56,7 @@ def update_q_values(self, gamma):
         self.q_table[tuple(state)][action] = updated_q_value
 
     # Save updated Q-table
-    with open("my-saved-qtable.pkl", "wb") as file:
+    with open("my-saved-qtable-2.pkl", "wb") as file:
         pickle.dump(self.q_table, file)
 
 

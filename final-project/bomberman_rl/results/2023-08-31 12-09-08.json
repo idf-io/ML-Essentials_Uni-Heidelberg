@@ -1,0 +1,21 @@
+{
+    "by_agent": {
+        "agent_softmax": {
+            "coins": 14,
+            "invalid": 108,
+            "moves": 209,
+            "rounds": 1,
+            "score": 14,
+            "steps": 400,
+            "time": 0.1645042896270752
+        }
+    },
+    "by_round": {
+        "Round 01 (2023-08-31 12-07-47)": {
+            "coins": 14,
+            "kills": 0,
+            "steps": 400,
+            "suicides": 0
+        }
+    }
+}
