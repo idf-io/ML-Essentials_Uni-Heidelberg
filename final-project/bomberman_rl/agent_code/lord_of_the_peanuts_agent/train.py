@@ -17,7 +17,7 @@ ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT', 'BOMB']
 def setup_training(self):
     self.transitions = deque(maxlen=TRANSITION_HISTORY_SIZE) #maintain a replay buffer (a deque of transitions) to store experiences.
     self.learning_rate = 0.01
-    self.discount_factor = 0.95
+    self.discount_factor = 0.995
     self.epsilon = 1.0
     self.epsilon_decay = 0.9
     self.min_epsilon = 0.05
@@ -50,7 +50,7 @@ def update_q_values(self, gamma):
             self.q_table[tuple(state)] = {}
         self.q_table[tuple(state)][action] = updated_q_value
 
-    with open("my-saved-qtable.pkl", "wb") as file:
+    with open("my-saved-qtable-1.pkl", "wb") as file:
         pickle.dump(self.q_table, file)
 
 def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_state: dict, events: List[str]):

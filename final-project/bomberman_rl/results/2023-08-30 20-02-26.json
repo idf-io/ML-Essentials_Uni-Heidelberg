@@ -1,0 +1,21 @@
+{
+    "by_agent": {
+        "lord_of_the_peanuts_agent": {
+            "coins": 15,
+            "invalid": 119,
+            "moves": 198,
+            "rounds": 1,
+            "score": 15,
+            "steps": 400,
+            "time": 0.16364789009094238
+        }
+    },
+    "by_round": {
+        "Round 01 (2023-08-30 20-01-43)": {
+            "coins": 15,
+            "kills": 0,
+            "steps": 400,
+            "suicides": 0
+        }
+    }
+}
