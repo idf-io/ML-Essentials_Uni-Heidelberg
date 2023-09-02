@@ -4,7 +4,7 @@ import numpy as np
 import logging
 from settings import BOMB_POWER, COLS
 
-ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT', 'BOMB']
+ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT']
 
 def setup(self):
     self.epsilon = 1.0
@@ -106,9 +106,33 @@ def state_to_features(game_state: dict) -> np.array:
             else:
                 features.extend([1, 1, 1])
 
-    features.append(self_position[0])
-    features.append(self_position[1])
-    #print(features)
+    # Append features of nearest coin location (x, y) coord in binary form (respectively 15 possibilities so 2^4 -> 4 features for each coordinate.
+    # E.g. max: 15 = b'1111'
+    #      min:  0 = b'0000'
+    # Mannhattan distance
+
+    coins = np.array(game_state['coins'], dtype="int")
+    position = np.array(self_position, dtype="int")
+    nearest_coin = coins[np.argmin(np.sum(np.abs(coins-position), axis=1))]
+
+    x = list("{0:04b}".format(nearest_coin[0]))
+    x = [int(i) for i in x]
+    y = list("{0:04b}".format(nearest_coin[1]))
+    y = [int(i) for i in y]
+
+    nearest_coin_bin = [*x, *y]
+    features.extend(nearest_coin_bin)
+
+    # Append agent's position in binary
+    x = list("{0:04b}".format(self_position[0]))
+    x = [int(i) for i in x]
+    y = list("{0:04b}".format(self_position[1]))
+    y = [int(i) for i in y]
+
+    self_position_bin = [*x, *y]
+    features.extend(self_position_bin)
+
+    # print(features)
     return np.array(features)
 
 
