@@ -24,6 +24,7 @@ def setup_training(self):
     self.gamma = 0.95
     self.alpha = 0.1
 
+
 def update_q_values(self, gamma):
     #sample batches from the replay buffer and update Q-values based on the Bellman equation.
     while self.transitions:
