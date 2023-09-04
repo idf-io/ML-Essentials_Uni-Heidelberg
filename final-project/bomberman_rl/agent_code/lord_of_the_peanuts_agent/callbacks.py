@@ -7,15 +7,13 @@ from settings import BOMB_POWER, COLS
 ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT']
 
 def setup(self):
-    self.epsilon = 1.0
-    self.learning_rate = 0.1  # Learning rate for Q-learning
-    self.discount_factor = 0.9  # Discount factor for future rewards
-    if self.train or not os.path.isfile("my-saved-qtable-1.pkl"):
+
+    if self.train or not os.path.isfile("my-saved-qtable-2.pkl"):
         self.logger.info("Setting up Q-table from scratch.")
         self.q_table = {} # Initialize Q-table
     else:
         self.logger.info("Loading Q-table from saved state.")
-        with open("my-saved-qtable-1.pkl", "rb") as file:
+        with open("my-saved-qtable-2.pkl", "rb") as file:
             self.q_table = pickle.load(file)
 
 def act(self, game_state: dict) -> str:
@@ -132,7 +130,13 @@ def state_to_features(game_state: dict) -> np.array:
     self_position_bin = [*x, *y]
     features.extend(self_position_bin)
 
-    # print(features)
+    # Calculate the distance between nearest coin and agent
+    distance = np.abs(nearest_coin[0] - self_position[0]) + np.abs(
+        nearest_coin[1] - self_position[1])
+
+    distance_digits = [int(digit) for digit in str(distance)]
+    features.extend(distance_digits)
+
     return np.array(features)
 
 

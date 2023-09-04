@@ -2,7 +2,7 @@ from collections import namedtuple, deque
 import pickle
 import numpy as np
 import events as e
-from .callbacks import state_to_features
+from .callbacks import state_to_features, ACTIONS
 from typing import List
 
 
@@ -11,18 +11,18 @@ Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'
 TRANSITION_HISTORY_SIZE = 5
 RECORD_ENEMY_TRANSITIONS = 1.0
 PLACEHOLDER_EVENT = "PLACEHOLDER"
+# Add custom events
+MOVE_CLOSER_TO_COIN = "MOVE_CLOSER_TO_COIN"
+MOVE_AWAY_FROM_COIN = "MOVE_AWAY_FROM_COIN"
 
-ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT', 'BOMB']
 
 def setup_training(self):
     self.transitions = deque(maxlen=TRANSITION_HISTORY_SIZE) #maintain a replay buffer (a deque of transitions) to store experiences.
-    self.learning_rate = 0.01
-    self.discount_factor = 0.995
     self.epsilon = 1.0
-    self.epsilon_decay = 0.9
-    self.min_epsilon = 0.05
+    self.epsilon_decay = 0.95
+    self.min_epsilon = 0.4
     self.gamma = 0.95
-    self.alpha = 0.1
+    self.alpha = 0.7
 
 def update_q_values(self, gamma):
     #sample batches from the replay buffer and update Q-values based on the Bellman equation.
@@ -50,11 +50,18 @@ def update_q_values(self, gamma):
             self.q_table[tuple(state)] = {}
         self.q_table[tuple(state)][action] = updated_q_value
 
-    with open("my-saved-qtable-1.pkl", "wb") as file:
+    with open("my-saved-qtable-2.pkl", "wb") as file:
         pickle.dump(self.q_table, file)
 
 def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_state: dict, events: List[str]):
     self.logger.debug(f'Encountered game event(s) {", ".join(map(repr, events))} in step {new_game_state["step"]}')
+    old_state = state_to_features(old_game_state)
+    new_state = state_to_features(new_game_state)
+
+    if new_state[len(new_state)-1] < old_state[len(old_state)-1]:
+        events.append(MOVE_CLOSER_TO_COIN)
+    elif new_state[len(new_state)-1] > old_state[len(old_state)-1]:
+        events.append(MOVE_AWAY_FROM_COIN)
     # Calculate reward based on events
     reward = reward_from_events(self, events)
     # add transitions to the replay buffer (store the state, action, next state, and reward)
@@ -71,14 +78,18 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
 
 def reward_from_events(self, events: List[str]) -> float:
     game_rewards = {
-        e.COIN_COLLECTED: 5.0,
-        e.KILLED_OPPONENT: 3.0,
-        e.KILLED_SELF: -2.0,
+        e.COIN_COLLECTED: 20.0,
+        e.KILLED_OPPONENT: 10.0,
+        e.KILLED_SELF: -10.0,
         e.SURVIVED_ROUND: 1.0,
-        e.COIN_FOUND: 1.0,
-        e.GOT_KILLED: -2.0,
+        e.COIN_FOUND: 2.0,
+        e.GOT_KILLED: -5.0,
         e.CRATE_DESTROYED: 2.0,
-        PLACEHOLDER_EVENT: -0.1
+        PLACEHOLDER_EVENT: -0.1,
+        e.INVALID_ACTION: -1.0,
+        MOVE_CLOSER_TO_COIN: 5.0,
+        MOVE_AWAY_FROM_COIN: -10.0,
+        e.WAITED: -2.0
     }
     reward_sum = 0.0
     for event in events:
