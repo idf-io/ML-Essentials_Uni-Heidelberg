@@ -8,7 +8,7 @@ from typing import List
 
 Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
 
-TRANSITION_HISTORY_SIZE = 5
+TRANSITION_HISTORY_SIZE = 1000
 RECORD_ENEMY_TRANSITIONS = 1.0
 PLACEHOLDER_EVENT = "PLACEHOLDER"
 # Add custom events
@@ -19,10 +19,10 @@ MOVE_AWAY_FROM_COIN = "MOVE_AWAY_FROM_COIN"
 def setup_training(self):
     self.transitions = deque(maxlen=TRANSITION_HISTORY_SIZE) #maintain a replay buffer (a deque of transitions) to store experiences.
     self.epsilon = 1.0
-    self.epsilon_decay = 0.95
+    self.epsilon_decay = 0.995
     self.min_epsilon = 0.4
-    self.gamma = 0.95
-    self.alpha = 0.7
+    self.gamma = 0.9
+    self.alpha = 0.1
 
 def update_q_values(self, gamma):
     #sample batches from the replay buffer and update Q-values based on the Bellman equation.
@@ -57,11 +57,12 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
     self.logger.debug(f'Encountered game event(s) {", ".join(map(repr, events))} in step {new_game_state["step"]}')
     old_state = state_to_features(old_game_state)
     new_state = state_to_features(new_game_state)
-
-    if new_state[len(new_state)-1] < old_state[len(old_state)-1]:
-        events.append(MOVE_CLOSER_TO_COIN)
-    elif new_state[len(new_state)-1] > old_state[len(old_state)-1]:
-        events.append(MOVE_AWAY_FROM_COIN)
+    # Append custom events for moving towards/away from coin
+    if e.COIN_COLLECTED not in events:
+        if new_state[len(new_state)-1] < old_state[len(old_state)-1]:
+            events.append(MOVE_CLOSER_TO_COIN)
+        elif new_state[len(new_state)-1] > old_state[len(old_state)-1]:
+            events.append(MOVE_AWAY_FROM_COIN)
     # Calculate reward based on events
     reward = reward_from_events(self, events)
     # add transitions to the replay buffer (store the state, action, next state, and reward)
@@ -78,18 +79,18 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
 
 def reward_from_events(self, events: List[str]) -> float:
     game_rewards = {
-        e.COIN_COLLECTED: 20.0,
-        e.KILLED_OPPONENT: 10.0,
-        e.KILLED_SELF: -10.0,
-        e.SURVIVED_ROUND: 1.0,
-        e.COIN_FOUND: 2.0,
-        e.GOT_KILLED: -5.0,
-        e.CRATE_DESTROYED: 2.0,
-        PLACEHOLDER_EVENT: -0.1,
-        e.INVALID_ACTION: -1.0,
-        MOVE_CLOSER_TO_COIN: 5.0,
-        MOVE_AWAY_FROM_COIN: -10.0,
-        e.WAITED: -2.0
+        e.COIN_COLLECTED: 200.0,
+        e.KILLED_OPPONENT: 0,
+        e.KILLED_SELF: 0,
+        e.SURVIVED_ROUND: 0,
+        e.COIN_FOUND: 0,
+        e.GOT_KILLED: 0,
+        e.CRATE_DESTROYED: 0,
+        PLACEHOLDER_EVENT: 0,
+        e.INVALID_ACTION: 0,
+        MOVE_CLOSER_TO_COIN: 100.0,
+        MOVE_AWAY_FROM_COIN: -100.0,
+        e.WAITED: 0
     }
     reward_sum = 0.0
     for event in events:

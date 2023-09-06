@@ -1,0 +1,75 @@
+{
+    "by_agent": {
+        "lord_of_the_peanuts_agent": {
+            "coins": 149,
+            "invalid": 1197,
+            "moves": 1989,
+            "rounds": 10,
+            "score": 149,
+            "steps": 4000,
+            "time": 0.3085966110229492
+        }
+    },
+    "by_round": {
+        "Round 01 (2023-09-04 12-28-23)": {
+            "coins": 13,
+            "kills": 0,
+            "steps": 400,
+            "suicides": 0
+        },
+        "Round 02 (2023-09-04 12-28-23)": {
+            "coins": 11,
+            "kills": 0,
+            "steps": 400,
+            "suicides": 0
+        },
+        "Round 03 (2023-09-04 12-28-23)": {
+            "coins": 21,
+            "kills": 0,
+            "steps": 400,
+            "suicides": 0
+        },
+        "Round 04 (2023-09-04 12-28-23)": {
+            "coins": 16,
+            "kills": 0,
+            "steps": 400,
+            "suicides": 0
+        },
+        "Round 05 (2023-09-04 12-28-24)": {
+            "coins": 23,
+            "kills": 0,
+            "steps": 400,
+            "suicides": 0
+        },
+        "Round 06 (2023-09-04 12-28-24)": {
+            "coins": 21,
+            "kills": 0,
+            "steps": 400,
+            "suicides": 0
+        },
+        "Round 07 (2023-09-04 12-28-24)": {
+            "coins": 12,
+            "kills": 0,
+            "steps": 400,
+            "suicides": 0
+        },
+        "Round 08 (2023-09-04 12-28-24)": {
+            "coins": 14,
+            "kills": 0,
+            "steps": 400,
+            "suicides": 0
+        },
+        "Round 09 (2023-09-04 12-28-24)": {
+            "coins": 2,
+            "kills": 0,
+            "steps": 400,
+            "suicides": 0
+        },
+        "Round 10 (2023-09-04 12-28-24)": {
+            "coins": 16,
+            "kills": 0,
+            "steps": 400,
+            "suicides": 0
+        }
+    }
+}

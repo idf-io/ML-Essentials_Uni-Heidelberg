@@ -4,7 +4,7 @@ import numpy as np
 import logging
 from settings import BOMB_POWER, COLS
 
-ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT']
+ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT']
 
 def setup(self):
 
@@ -110,32 +110,35 @@ def state_to_features(game_state: dict) -> np.array:
     # Mannhattan distance
 
     coins = np.array(game_state['coins'], dtype="int")
-    position = np.array(self_position, dtype="int")
-    nearest_coin = coins[np.argmin(np.sum(np.abs(coins-position), axis=1))]
+    if len(coins) > 0:
+        position = np.array(self_position, dtype="int")
+        nearest_coin = coins[np.argmin(np.sum(np.abs(coins-position), axis=1))]
 
-    x = list("{0:04b}".format(nearest_coin[0]))
-    x = [int(i) for i in x]
-    y = list("{0:04b}".format(nearest_coin[1]))
-    y = [int(i) for i in y]
+        x = list("{0:04b}".format(nearest_coin[0]))
+        x = [int(i) for i in x]
+        y = list("{0:04b}".format(nearest_coin[1]))
+        y = [int(i) for i in y]
 
-    nearest_coin_bin = [*x, *y]
-    features.extend(nearest_coin_bin)
+        nearest_coin_bin = [*x, *y]
+        features.extend(nearest_coin_bin)
+        # Append agent's position in binary
+        x = list("{0:04b}".format(self_position[0]))
+        x = [int(i) for i in x]
+        y = list("{0:04b}".format(self_position[1]))
+        y = [int(i) for i in y]
 
-    # Append agent's position in binary
-    x = list("{0:04b}".format(self_position[0]))
-    x = [int(i) for i in x]
-    y = list("{0:04b}".format(self_position[1]))
-    y = [int(i) for i in y]
+        self_position_bin = [*x, *y]
+        features.extend(self_position_bin)
 
-    self_position_bin = [*x, *y]
-    features.extend(self_position_bin)
+        # Calculate the distance between nearest coin and agent
+        distance = np.abs(nearest_coin[0] - self_position[0]) + np.abs(
+            nearest_coin[1] - self_position[1])
 
-    # Calculate the distance between nearest coin and agent
-    distance = np.abs(nearest_coin[0] - self_position[0]) + np.abs(
-        nearest_coin[1] - self_position[1])
+        distance_digits = [int(digit) for digit in str(distance)]
+        features.extend(distance_digits)
 
-    distance_digits = [int(digit) for digit in str(distance)]
-    features.extend(distance_digits)
+
+
 
     return np.array(features)
 
