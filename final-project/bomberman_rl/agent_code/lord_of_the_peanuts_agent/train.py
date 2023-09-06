@@ -8,7 +8,7 @@ from typing import List
 
 Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
 
-TRANSITION_HISTORY_SIZE = 1000
+TRANSITION_HISTORY_SIZE = 10000
 RECORD_ENEMY_TRANSITIONS = 1.0
 PLACEHOLDER_EVENT = "PLACEHOLDER"
 # Add custom events
