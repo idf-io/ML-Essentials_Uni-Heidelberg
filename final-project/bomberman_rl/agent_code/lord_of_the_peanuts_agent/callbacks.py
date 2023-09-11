@@ -8,7 +8,7 @@ ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT']
 
 def setup(self):
 
-    if self.train or not os.path.isfile("my-saved-qtable-14.pkl"):
+    if self.train and not os.path.isfile("my-saved-qtable-14.pkl"):
         self.logger.info("Setting up Q-table from scratch.")
         self.q_table = {} # Initialize Q-table
     else:
