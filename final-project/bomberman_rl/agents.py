@@ -196,7 +196,7 @@ class AgentRunner:
     Agent callback runner (called by backend).
     """
 
-    def __init__(self, train, agent_name, code_name, result_queue):
+    def __init__(self, train, agent_name, code_name, result_queue, ian_delivers_args):
         self.agent_name = agent_name
         self.code_name = code_name
         self.result_queue = result_queue
@@ -217,6 +217,7 @@ class AgentRunner:
                     raise TypeError(f"Agent code {self.code_name}'s {event_name!r} has {actual_arg_count} arguments, but {event_arg_count} are required.\nChange your function's signature to the following:\n\n{proper_signature}")
 
         self.fake_self = SimpleNamespace()
+        self.fake_self.args = ian_delivers_args
         self.fake_self.train = train
 
         self.wlogger = logging.getLogger(self.agent_name + '_wrapper')
@@ -293,12 +294,13 @@ class SequentialAgentBackend(AgentBackend):
     AgentConnector realised in main thread (easy debugging).
     """
 
-    def __init__(self, train, agent_name, code_name):
+    def __init__(self, train, agent_name, code_name, ian_gets_args):
         super().__init__(train, agent_name, code_name, queue.Queue())
         self.runner = None
+        self.args = ian_gets_args
 
     def start(self):
-        self.runner = AgentRunner(self.train, self.agent_name, self.code_name, self.result_queue)
+        self.runner = AgentRunner(self.train, self.agent_name, self.code_name, self.result_queue, self.args)
 
     def send_event(self, event_name, *event_args):
         prev_cwd = os.getcwd()

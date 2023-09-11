@@ -106,6 +106,8 @@ def main(argv = None):
     agent_group.add_argument("--agents", type=str, nargs="+", default=["rule_based_agent"] * s.MAX_AGENTS, help="Explicitly set the agent names in the game")
     play_parser.add_argument("--train", default=0, type=int, choices=[0, 1, 2, 3, 4],
                              help="First … agents should be set to training mode")
+    play_parser.add_argument("--qtable", type=str,
+                             help="If training a q-learning model, optionally specifiy the q-table to load and continue training upon.")
     play_parser.add_argument("--continue-without-training", default=False, action="store_true")
     # play_parser.add_argument("--single-process", default=False, action="store_true")
 

@@ -8,12 +8,15 @@ ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT']
 
 def setup(self):
 
-    if self.train and not os.path.isfile("my-saved-qtable-14.pkl"):
+    if self.args.command_name == "play":
+        qtable_load = self.args.qtable
+
+    if self.train and not os.path.isfile(qtable_load):
         self.logger.info("Setting up Q-table from scratch.")
         self.q_table = {} # Initialize Q-table
     else:
         self.logger.info("Loading Q-table from saved state.")
-        with open("my-saved-qtable-14.pkl", "rb") as file:
+        with open(qtable_load, "rb") as file:
             self.q_table = pickle.load(file)
 
 def act(self, game_state: dict) -> str:

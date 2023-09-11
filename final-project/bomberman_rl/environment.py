@@ -109,7 +109,7 @@ class GenericWorld:
         assert len(self.agents) < s.MAX_AGENTS
 
         # if self.args.single_process:
-        backend = SequentialAgentBackend(train, name, agent_dir)
+        backend = SequentialAgentBackend(train, name, agent_dir, self.args)
         # else:
         # backend = ProcessAgentBackend(train, name, agent_dir)
         backend.start()
