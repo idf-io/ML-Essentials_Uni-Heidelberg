@@ -52,7 +52,7 @@ def update_q_values(self, gamma):
             self.q_table[tuple(state)] = {}
         self.q_table[tuple(state)][action] = updated_q_value
 
-    with open("my-saved-qtable-14.pkl", "wb") as file:
+    with open(self.args.qtable, "wb") as file:
         pickle.dump(self.q_table, file)
 
 def is_action_invalid(state, action):
