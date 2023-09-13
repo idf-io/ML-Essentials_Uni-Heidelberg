@@ -80,46 +80,65 @@ def state_to_features(game_state: dict) -> np.array:
 
     # reduce the feature
     # layers=0 means that only consider the information of actual field
-    layers=1
-    features = []
-    #max(bomb[0][0]-power,0):min(bomb[0][0]+power+1
-    for x in range(self_position[0]-layers,self_position[0]+layers+1):
-        for y in range(self_position[1]-layers,self_position[1]+layers+1):
 
-            assert not(x<0 or x>=new_field.shape[0] or y<0 or y>=new_field.shape[1]), (f"\n"
-                                                                                  f"x>=0 and x<new_field.shape[0]:\n"
-                                                                                  f"\tx = {x}\n"
-                                                                                  f"\tnew_field.shape[0] = {new_field.shape[0]}\n"
-                                                                                  f"y>=0 and y<new_field.shape[0]:\n"
-                                                                                  f"\ty = {y}\n"
-                                                                                  f"\tnew_field.shape[1] = {new_field.shape[1]}")
+    def state2position_features_rings(game_state, agent_position, layers: int=1) -> list:
+        """
+        Convert the game_state to an array of features describing the agent's surroundings
+        Input:
+        - game_state: np.array
+        - agent_position: list
+        Output:
+        - features: list (len=38)
+        """
 
-            cell = new_field[x, y]
+        features = []
 
-            # Feature matrix: Code surrounding tiles' states in binary
+        for x in range(agent_position[0]-layers,agent_position[0]+layers+1):
+            for y in range(agent_position[1]-layers,agent_position[1]+layers+1):
 
-            if cell == 2:
-                # Bomb
-                features.extend([1, 0, 0])
+                assert not(x<0 or x>=game_state.shape[0] or y<0 or y>=game_state.shape[1]), (f"\n"
+                                                                                           f"x>=0 and x<game_state.shape[0]:\n"
+                                                                                           f"\tx = {x}\n"
+                                                                                           f"\tgame_state.shape[0] = {game_state.shape[0]}\n"
+                                                                                           f"y>=0 and y<game_state.shape[0]:\n"
+                                                                                           f"\ty = {y}\n"
+                                                                                           f"\tgame_state.shape[1] = {game_state.shape[1]}")
 
-            elif cell == 1:
-                # Crate
-                features.extend([0, 1, 0])
+                cell = game_state[x, y]
 
-            elif cell == 0:
-                # Empty tile
-                features.extend([0, 1, 1])
+                # Create feature matrix: Code surrounding tiles' states in binary
 
-            elif cell == -1:
-                # Wall
-                features.extend([1, 1, 0])
+                if cell == 2:
+                    # Bomb
+                    features.extend([1, 0, 0])
 
-            elif cell == 3:
-                # Coin
-                features.extend([0, 0, 1])
+                elif cell == 1:
+                    # Crate
+                    features.extend([0, 1, 0])
 
-            else:
-                assert False, f"Cell value {cell} not expected nor covered in map above."
+                elif cell == 0:
+                    # Empty tile
+                    features.extend([0, 1, 1])
+
+                elif cell == -1:
+                    # Wall
+                    features.extend([1, 1, 0])
+
+                elif cell == 3:
+                    # Coin
+                    features.extend([0, 0, 1])
+
+                else:
+                    assert False, f"Cell value {cell} not expected nor covered in map above."
+
+        return features
+
+
+    layers = 1
+
+    features = state2position_features_rings(game_state=new_field,
+                                             agent_position=self_position,
+                                             layers=layers)
 
     # Append features of nearest coin location (x, y) coord in binary form (respectively 15 possibilities so 2^4 -> 4 features for each coordinate.
     # E.g. max: 15 = b'1111'
