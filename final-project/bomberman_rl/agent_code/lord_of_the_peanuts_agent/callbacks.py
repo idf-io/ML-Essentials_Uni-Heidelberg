@@ -85,27 +85,41 @@ def state_to_features(game_state: dict) -> np.array:
     #max(bomb[0][0]-power,0):min(bomb[0][0]+power+1
     for x in range(self_position[0]-layers,self_position[0]+layers+1):
         for y in range(self_position[1]-layers,self_position[1]+layers+1):
-            #-1 means the border of the map
-            #-2 means expetional situation
-            #we wont have -2
-            #we do this because we want feature have a fixed length
-            #print(x,y)
-            if (x<0 or x>=new_field.shape[0] or y<0 or y>=new_field.shape[1]):
-                cell=-2
-            else:
-                cell = new_field[x, y]
+
+            assert not(x<0 or x>=new_field.shape[0] or y<0 or y>=new_field.shape[1]), (f"\n"
+                                                                                  f"x>=0 and x<new_field.shape[0]:\n"
+                                                                                  f"\tx = {x}\n"
+                                                                                  f"\tnew_field.shape[0] = {new_field.shape[0]}\n"
+                                                                                  f"y>=0 and y<new_field.shape[0]:\n"
+                                                                                  f"\ty = {y}\n"
+                                                                                  f"\tnew_field.shape[1] = {new_field.shape[1]}")
+
+            cell = new_field[x, y]
+
+            # Feature matrix: Code surrounding tiles' states in binary
+
             if cell == 2:
+                # Bomb
                 features.extend([1, 0, 0])
+
             elif cell == 1:
+                # Crate
                 features.extend([0, 1, 0])
+
             elif cell == 0:
+                # Empty tile
                 features.extend([0, 1, 1])
+
             elif cell == -1:
+                # Wall
                 features.extend([1, 1, 0])
+
             elif cell == 3:
+                # Coin
                 features.extend([0, 0, 1])
+
             else:
-                features.extend([1, 1, 1])
+                assert False, f"Cell value {cell} not expected nor covered in map above."
 
     # Append features of nearest coin location (x, y) coord in binary form (respectively 15 possibilities so 2^4 -> 4 features for each coordinate.
     # E.g. max: 15 = b'1111'
