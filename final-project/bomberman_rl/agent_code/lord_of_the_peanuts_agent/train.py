@@ -5,7 +5,6 @@ import events as e
 from .callbacks import state_to_features, ACTIONS
 from typing import List
 
-
 Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
 
 TRANSITION_HISTORY_SIZE = 10000
@@ -14,18 +13,21 @@ PLACEHOLDER_EVENT = "PLACEHOLDER"
 # Add custom events
 MOVE_CLOSER_TO_COIN = "MOVE_CLOSER_TO_COIN"
 MOVE_AWAY_FROM_COIN = "MOVE_AWAY_FROM_COIN"
+#GOT_STUCK = "GOT_STUCK"
 
 
 def setup_training(self):
-    self.transitions = deque(maxlen=TRANSITION_HISTORY_SIZE) #maintain a replay buffer (a deque of transitions) to store experiences.
+    self.transitions = deque(
+        maxlen=TRANSITION_HISTORY_SIZE)  # maintain a replay buffer (a deque of transitions) to store experiences.
     self.epsilon = 1.0
-    self.epsilon_decay = 0.995
+    self.epsilon_decay = 0.9995
     self.min_epsilon = 0.4
     self.gamma = 0.9
     self.alpha = 0.1
 
+
 def update_q_values(self, gamma):
-    #sample batches from the replay buffer and update Q-values based on the Bellman equation.
+    # sample batches from the replay buffer and update Q-values based on the Bellman equation.
     while self.transitions:
         transition = self.transitions.popleft()
         state = transition.state
@@ -55,6 +57,7 @@ def update_q_values(self, gamma):
     with open(self.args.qtable, "wb") as file:
         pickle.dump(self.q_table, file)
 
+
 def is_action_invalid(state, action):
     if action == 'RIGHT' and all(state[21:24] == [1, 1, 0]):
         return True
@@ -66,29 +69,40 @@ def is_action_invalid(state, action):
         return True
     else:
         return False
+
+
 def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_state: dict, events: List[str]):
     self.logger.debug(f'Encountered game event(s) {", ".join(map(repr, events))} in step {new_game_state["step"]}')
-    old_state = state_to_features(old_game_state)
-    new_state = state_to_features(new_game_state)
+    old_state = state_to_features(self, old_game_state)
+    new_state = state_to_features(self, new_game_state)
+
+    """
+    if new_state[27] == 1:
+        events.append(GOT_STUCK)
+    """
+
     # Append custom events for moving towards/away from coin
     if e.COIN_COLLECTED not in events:
-        if new_state[len(new_state)-1] < old_state[len(old_state)-1]:
+        if new_state[len(new_state) - 1] < old_state[len(old_state) - 1]:
             events.append(MOVE_CLOSER_TO_COIN)
-        elif new_state[len(new_state)-1] > old_state[len(old_state)-1]:
+        elif new_state[len(new_state) - 1] > old_state[len(old_state) - 1]:
             events.append(MOVE_AWAY_FROM_COIN)
     # Calculate reward based on events
     reward = reward_from_events(self, events)
     # add transitions to the replay buffer (store the state, action, next state, and reward)
     self.transitions.append(
-        Transition(state_to_features(old_game_state), self_action, state_to_features(new_game_state), reward))
+        Transition(state_to_features(self, old_game_state), self_action, state_to_features(self, new_game_state),
+                   reward))
     # Gradually decrease epsilon
     self.epsilon = max(self.epsilon * self.epsilon_decay, self.min_epsilon)
+
 
 def end_of_round(self, last_game_state: dict, last_action: str, events: List[str]):
     self.logger.debug(f'Encountered event(s) {", ".join(map(repr, events))} in final step')
     update_q_values(self, self.gamma)
     reward = reward_from_events(self, events)
-    self.transitions.append(Transition(state_to_features(last_game_state), last_action, None, reward))
+    self.transitions.append(Transition(state_to_features(self, last_game_state), last_action, None, reward))
+
 
 def reward_from_events(self, events: List[str]) -> float:
     game_rewards = {
@@ -103,7 +117,8 @@ def reward_from_events(self, events: List[str]) -> float:
         e.INVALID_ACTION: -50.0,
         MOVE_CLOSER_TO_COIN: 100.0,
         MOVE_AWAY_FROM_COIN: -100.0,
-        e.WAITED: 0
+        e.WAITED: 0,
+        #GOT_STUCK: -100.0
     }
     reward_sum = 0.0
     for event in events:
@@ -111,4 +126,3 @@ def reward_from_events(self, events: List[str]) -> float:
             reward_sum += game_rewards[event]
     self.logger.info(f"Awarded {reward_sum} for events {', '.join(events)}")
     return reward_sum
-
