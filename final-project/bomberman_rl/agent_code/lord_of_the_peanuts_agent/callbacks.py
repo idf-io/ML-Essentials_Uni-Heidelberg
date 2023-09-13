@@ -70,14 +70,76 @@ def state_to_features_ori(game_state: dict) -> np.array:
     return np.array(features)
 
 
+def state2position_features_cross(game_state, agent_position) -> list:
+    """
+    Convert the game_state to an array of features describing the agent's surroundings.
+    Only take the tiles above, below, left and right from the agent.
+    Input:
+    - game_state: np.array
+    - agent_position: list
+    Output:
+    - features: list (len=12=4*3)
+    """
+
+    features = []
+
+    # Define relevant cells
+    cells = (
+        (agent_position[0]-1, agent_position[1]),
+        (agent_position[0]+1, agent_position[1]),
+        (agent_position[0], agent_position[1]-1),
+        (agent_position[0], agent_position[1]+1)
+    )
+
+    for c in cells:
+
+        assert not (c[0] < 0 or c[0] >= game_state.shape[0] or c[1] < 0 or c[1] >= game_state.shape[1]), (f"\n"
+                                                                                                          f"c[0]>=0 and c[0]<game_state.shape[0]:\n"
+                                                                                                          f"\tc[0] = {c[0]}\n"
+                                                                                                          f"\tgame_state.shape[0] = {game_state.shape[0]}\n"
+                                                                                                          f"c[1]>=0 and c[1]<game_state.shape[0]:\n"
+                                                                                                          f"\tc[1] = {c[1]}\n"
+                                                                                                          f"\tgame_state.shape[1] = {game_state.shape[1]}")
+
+        cell = game_state[c]
+
+        # Create feature matrix: Code surrounding tiles' states in binary
+
+        if cell == 2:
+            # Bomb
+            features.extend([1, 0, 0])
+
+        elif cell == 1:
+            # Crate
+            features.extend([0, 1, 0])
+
+        elif cell == 0:
+            # Empty tile
+            features.extend([0, 1, 1])
+
+        elif cell == -1:
+            # Wall
+            features.extend([1, 1, 0])
+
+        elif cell == 3:
+            # Coin
+            features.extend([0, 0, 1])
+
+        else:
+            assert False, f"Cell value {cell} not expected nor covered in map above."
+
+    return features
+
+
 def state2position_features_rings(game_state, agent_position, layers: int = 1) -> list:
     """
     Convert the game_state to an array of features describing the agent's surroundings
     Input:
     - game_state: np.array
     - agent_position: list
+    - layers: amount of tiles to consider in a radial distance from the agent
     Output:
-    - features: list (len=38)
+    - features: list (len=24=3*8)
     """
 
     features = []
@@ -142,13 +204,15 @@ def state_to_features(self, game_state: dict) -> np.array:
     # !!think more about the features, such as vector to all coins
 
     # reduce the feature
-    # layers=0 means that only consider the information of actual field
 
-    layers = 1
+    features = state2position_features_cross(game_state=new_field,
+                                             agent_position=self_position)
 
-    features = state2position_features_rings(game_state=new_field,
-                                             agent_position=self_position,
-                                             layers=layers)
+    # layers = 1
+    #
+    # features = state2position_features_rings(game_state=new_field,
+    #                                          agent_position=self_position,
+    #                                          layers=layers)
 
     # Append features of nearest coin location (x, y) coord in binary form (respectively 15 possibilities so 2^4 -> 4 features for each coordinate.
     # E.g. max: 15 = b'1111'
