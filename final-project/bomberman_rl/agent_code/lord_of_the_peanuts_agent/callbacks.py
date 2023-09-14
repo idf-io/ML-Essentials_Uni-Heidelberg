@@ -94,13 +94,14 @@ def state2position_features_cross(game_state, agent_position) -> list:
 
     for c in cells:
 
-        assert not (c[0] < 0 or c[0] >= game_state.shape[0] or c[1] < 0 or c[1] >= game_state.shape[1]), (f"\n"
-                                                                                                          f"c[0]>=0 and c[0]<game_state.shape[0]:\n"
-                                                                                                          f"\tc[0] = {c[0]}\n"
-                                                                                                          f"\tgame_state.shape[0] = {game_state.shape[0]}\n"
-                                                                                                          f"c[1]>=0 and c[1]<game_state.shape[0]:\n"
-                                                                                                          f"\tc[1] = {c[1]}\n"
-                                                                                                          f"\tgame_state.shape[1] = {game_state.shape[1]}")
+        assert not (c[0] < 0 or c[0] >= game_state.shape[0] or c[1] < 0 or c[1] >= game_state.shape[1]), \
+            (f"\n"
+             f"c[0]>=0 and c[0]<game_state.shape[0]:\n"
+             f"\tc[0] = {c[0]}\n"
+             f"\tgame_state.shape[0] = {game_state.shape[0]}\n"
+             f"c[1]>=0 and c[1]<game_state.shape[0]:\n"
+             f"\tc[1] = {c[1]}\n"
+             f"\tgame_state.shape[1] = {game_state.shape[1]}")
 
         cell = game_state[c]
 
