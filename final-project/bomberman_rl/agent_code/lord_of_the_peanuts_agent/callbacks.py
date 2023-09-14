@@ -3,8 +3,9 @@ import pickle
 import numpy as np
 import logging
 from settings import BOMB_POWER, COLS
+from datetime import datetime
 
-# from collections import deque
+from collections import deque
 
 ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT']
 
@@ -85,10 +86,10 @@ def state2position_features_cross(game_state, agent_position) -> list:
 
     # Define relevant cells
     cells = (
-        (agent_position[0]-1, agent_position[1]),
-        (agent_position[0]+1, agent_position[1]),
-        (agent_position[0], agent_position[1]-1),
-        (agent_position[0], agent_position[1]+1)
+        (agent_position[0] - 1, agent_position[1]),
+        (agent_position[0] + 1, agent_position[1]),
+        (agent_position[0], agent_position[1] - 1),
+        (agent_position[0], agent_position[1] + 1)
     )
 
     for c in cells:
@@ -190,6 +191,122 @@ def state2position_features_rings(game_state, agent_position, layers: int = 1) -
     return features
 
 
+# TO-DO:  make function for when we test hyperparameters
+#     position = np.array(self_position, dtype="int")
+#     nearest_coin = coins[np.argmin(np.sum(np.abs(coins - position), axis=1))]
+
+
+def array2graph(array, nogo: list = [-1, 1]) -> dict:
+    graph = {}
+
+    for x in range(array.shape[0]):
+        for y in range(array.shape[1]):
+
+            if array[x, y] not in nogo:
+
+                node = (x, y)
+                edges = []
+
+                cells = (
+                    (x - 1, y),
+                    (x + 1, y),
+                    (x, y - 1),
+                    (x, y + 1)
+                )
+
+                for c in cells:
+
+                    if c[0] < 0 or c[0] > array.shape[0]:
+                        continue
+
+                    if c[1] < 0 > array.shape[1]:
+                        continue
+
+                    if array[c[0], c[1]] in nogo:
+                        continue
+
+                    edges.append(c)
+
+                graph[node] = tuple(edges)
+
+    return graph
+
+
+def breadth_first_search(graph: dict, start: tuple, end:tuple, nr_nodes: int):
+    visited = deque(maxlen=nr_nodes)
+    queue = deque(maxlen=nr_nodes)
+    prev = {}
+
+    visited.append(start)
+    queue.append(start)
+
+
+    while queue:
+
+        node = queue.popleft()
+
+        if node == end:
+            return prev
+
+        for edge in graph[node]:
+
+            if edge not in visited:
+                queue.append(edge)
+                visited.append(edge)
+                prev[edge] = node
+
+    return {}
+
+
+def reconstruct_path(start: tuple, end: tuple, prev: dict):
+    shortest_path = []
+
+    i = end
+
+    while True:
+
+        shortest_path.append(i)  # Add the current node to the path
+        i = prev[i]  # Move to the predecessor (parent) node
+        if i == start:
+            shortest_path.append(i)
+            break
+
+    shortest_path.reverse()
+
+    if shortest_path[0] == start:
+        return tuple(shortest_path)
+
+    return ()
+
+
+def get_distance_and_move(start: tuple, end: tuple, graph: dict, nr_nodes: int):
+
+    prev = breadth_first_search(graph, start, end, nr_nodes)
+    shortest_path = reconstruct_path(start, end, prev)
+
+    next_cell = shortest_path[1]
+
+    if next_cell[0] - start[0] == 1:
+        # Pseudo-down
+        move = 1
+
+    if next_cell[0] - start[0] == -1:
+        # Pseudo-up
+        move = 2
+
+    if next_cell[1] - start[1] == 1:
+        # Pseudo-right
+        move = 3
+
+    if next_cell[1] - start[1] == -1:
+        # Pseudo-right
+        move = 4
+
+    distance = len(shortest_path)
+
+    return (move, distance, shortest_path)
+
+
 def state_to_features(self, game_state: dict) -> np.array:
     if game_state is None:
         return None
@@ -228,33 +345,57 @@ def state_to_features(self, game_state: dict) -> np.array:
 
     coins = np.array(game_state['coins'], dtype="int")
     if len(coins) > 0:
-        position = np.array(self_position, dtype="int")
-        nearest_coin = coins[np.argmin(np.sum(np.abs(coins - position), axis=1))]
 
-        x = list("{0:04b}".format(nearest_coin[0]))
+        # ADD FEATURES: closest coin stats
+
+        graph = array2graph(new_field)
+
+        for idx, coin in enumerate(coins):
+
+            temp_coin_stats = get_distance_and_move(start=self_position,
+                                                    end=tuple(coin),
+                                                    graph=graph,
+                                                    nr_nodes=15 * 15)
+
+            if idx == 0:
+
+                closest_coin_stats = temp_coin_stats
+                closest_coin = coin
+
+            else:
+                
+                if temp_coin_stats[1] < closest_coin_stats[1]:
+
+                    closest_coin_stats = temp_coin_stats
+                    closest_coin = coin
+
+
+        x = list("{0:04b}".format(closest_coin[0]))
         x = [int(i) for i in x]
-        y = list("{0:04b}".format(nearest_coin[1]))
+        y = list("{0:04b}".format(closest_coin[1]))
         y = [int(i) for i in y]
 
         nearest_coin_bin = [*x, *y]
-        features.extend(nearest_coin_bin)
-        # Append agent's position in binary
-        x = list("{0:04b}".format(self_position[0]))
-        x = [int(i) for i in x]
-        y = list("{0:04b}".format(self_position[1]))
-        y = [int(i) for i in y]
-
-        self_position_bin = [*x, *y]
-        features.extend(self_position_bin)
-
-        # Calculate the distance between nearest coin and agent
-        distance = np.abs(nearest_coin[0] - self_position[0]) + np.abs(
-            nearest_coin[1] - self_position[1])
-
-        features.extend([distance])
+        features.extend(closest_coin)
 
     else:
-        features.extend([0] * 17)
+        features.extend([0] * 8)
+
+
+    # ADD FEATURE: Agent's position in binary
+    x = list("{0:04b}".format(self_position[0]))
+    x = [int(i) for i in x]
+    y = list("{0:04b}".format(self_position[1]))
+    y = [int(i) for i in y]
+
+    self_position_bin = [*x, *y]
+    features.extend(self_position_bin)
+
+    # ADD FEATURE: Distance of closest coin to agent
+    features.append(closest_coin_stats[1])
+
+    # ADD FEATURE: Move closer to closest coin
+    features.append(closest_coin_stats[0])
 
     return np.array(features)
 
