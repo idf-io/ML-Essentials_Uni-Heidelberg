@@ -16,10 +16,13 @@ import settings as s
 from agents import Agent, SequentialAgentBackend
 from fallbacks import pygame
 from items import Coin, Explosion, Bomb
+from settings import BOMB_POWER, COLS
 
 WorldArgs = namedtuple("WorldArgs",
                        ["no_gui", "fps", "turn_based", "update_interval", "save_replay", "replay", "make_video", "continue_without_training", "log_dir", "save_stats", "match_name", "seed", "silence_errors", "scenario"])
 
+datasets={}
+save_flag=1
 
 class Trophy:
     coin_trophy = pygame.transform.smoothscale(pygame.image.load(s.ASSET_DIR / 'coin.png'), (15, 15))
@@ -116,6 +119,7 @@ class GenericWorld:
 
         color = self.colors.pop()
         agent = Agent(name, agent_dir, name, train, backend, color, color)
+        datasets[name]=[[],[]]#####state,action
         self.agents.append(agent)
 
     def tile_is_free(self, x, y):
@@ -419,12 +423,19 @@ class BombeRLeWorld(GenericWorld):
 
     def poll_and_run_agents(self):
         # Tell agents to act
+
+        state_log=0
+
         for a in self.active_agents:
             state = self.get_state_for_agent(a)
+            ###############################
+            #state_log = state_to_features(state)
+            ###############################
             a.store_game_state(state)
             a.reset_game_events()
             if a.available_think_time > 0:
-                a.act(state)
+                a.act(state)############make changes
+
 
         # Give agents time to decide
         perm = self.rng.permutation(len(self.active_agents))
@@ -444,6 +455,14 @@ class BombeRLeWorld(GenericWorld):
                     action = "ERROR"
                     think_time = float("inf")
 
+                #####
+                #action_log=action
+                #print("action_log:", action_log)
+                #print("state_log:", state_log)
+
+                #datasets[a.name][0].append(state_log)
+                #datasets[a.name][1].append(action_log)
+                ########
                 self.logger.info(f'Agent <{a.name}> chose action {action} in {think_time:.2f}s.')
                 if think_time > a.available_think_time:
                     next_think_time = a.base_timeout - (think_time - a.available_think_time)
@@ -592,6 +611,7 @@ class GUI:
         # agents = sorted(self.agents, key=lambda a: (a.score, -a.mean_time), reverse=True)
         agents = self.world.agents
         leading = max(agents, key=lambda a: (a.score, a.name))
+
         y_base = s.GRID_OFFSET[1] + 15
         for i, a in enumerate(agents):
             bounce = 0 if (a is not leading or self.world.running) else np.abs(10 * np.sin(5 * time()))
@@ -612,6 +632,22 @@ class GUI:
             color = np.int_((255 * (np.sin(3 * time()) / 3 + .66),
                              255 * (np.sin(4 * time() + np.pi / 3) / 3 + .66),
                              255 * (np.sin(5 * time() - np.pi / 3) / 3 + .66)))
+            '''
+            #############
+            global save_flag
+            if(save_flag==1):
+                with open("test_state.txt","a") as f:
+                    for every_state in datasets[leading.display_name][0]:
+                        f.writelines(" ".join(str(i) for i in every_state))
+                        f.writelines("\n")
+                with open("test_action.txt","a") as f2:
+                    for every_action in datasets[leading.display_name][1]:
+                        f2.writelines(str(every_action))
+                        f2.writelines("\n")
+                #print(datasets[leading.display_name])
+                save_flag=0
+            #############
+            '''
             self.render_text(leading.display_name, x_center, 320, color,
                              valign='top', halign='center', size='huge')
             self.render_text('has won the round!', x_center, 350, color,
@@ -657,3 +693,87 @@ class GUI:
         self.world.logger.info("Done writing videos.")
         for f in self.screenshot_dir.glob(f'{self.world.round_id}_*.png'):
             f.unlink()
+
+
+
+#format new state
+##############################################
+def state_to_features(game_state: dict) -> np.array:
+
+    if game_state is None:
+        return None
+
+    #reset the field to accelerate the algorithm
+    field = game_state["field"]
+    self_position = game_state["self"][3]
+    new_field = field2bomb(game_state)
+    new_field = field2coin(game_state, new_field)
+
+    # !!think more about the features, such as vector to all coins
+
+    # reduce the feature
+    # layers=0 means that only consider the information of actual field
+    layers=1
+    features = []
+    #max(bomb[0][0]-power,0):min(bomb[0][0]+power+1
+    for x in range(self_position[0]-layers,self_position[0]+layers+1):
+        for y in range(self_position[1]-layers,self_position[1]+layers+1):
+            #-1 means the border of the map
+            #-2 means expetional situation
+            #we wont have -2
+            #we do this because we want feature have a fixed length
+            #print(x,y)
+            if (x<0 or x>=new_field.shape[0] or y<0 or y>=new_field.shape[1]):
+                cell=-2
+            else:
+                cell = new_field[x, y]
+            if cell == 2:
+                features.extend([1, 0, 0])
+            elif cell == 1:
+                features.extend([0, 1, 0])
+            elif cell == 0:
+                features.extend([0, 1, 1])
+            elif cell == -1:
+                features.extend([1, 1, 0])
+            elif cell == 3:
+                features.extend([0, 0, 1])
+            else:
+                features.extend([1, 1, 1])
+
+    features.append(self_position[0])
+    features.append(self_position[1])
+    #print(features)
+    return np.array(features)
+
+
+def field2bomb(game_state: dict, power=BOMB_POWER, board_size=COLS):
+
+    """
+    Convert the field array to include tiles where the explosion takes place next move.
+    """
+
+    bomb_mask = np.zeros([board_size, board_size])
+    #0 dimension indicates the position of bomb,1 dimension indicates the time before explosion (0 right before explosion)
+    for bomb in game_state["bombs"]:
+        if bomb[1] == 0:
+            bomb_mask[max(bomb[0][0]-power,0):min(bomb[0][0]+power+1,board_size),bomb[0][1]] = 1
+            bomb_mask[bomb[0][0]][max(bomb[0][1]-power,0):min(bomb[0][1]+power+1,board_size)] = 1
+
+    new_field = (game_state["field"] == 0) & np.array(bomb_mask, dtype=bool)
+    new_field = np.where(new_field, 2, game_state["field"])
+
+    return new_field
+
+def field2coin(game_state: dict, new_field):
+    """
+    :param game_state: current state of the game
+    :param new_field: field with walls, crates and bombs
+    :return: new_field with coin locations
+    """
+    coins = game_state["coins"]
+
+    for coin in coins:
+        if new_field[coin[0]][coin[1]] == 0 :
+            new_field[coin[0]][coin[1]] = 3
+
+    return new_field

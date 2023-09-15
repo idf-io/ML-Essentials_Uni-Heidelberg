@@ -199,6 +199,7 @@ def act(self, game_state):
         if xb == x and yb == y:
             action_ideas.extend(action_ideas[:4])
 
+
     # Pick last action added to the proposals list that is also valid
     while len(action_ideas) > 0:
         a = action_ideas.pop()
@@ -206,5 +207,6 @@ def act(self, game_state):
             # Keep track of chosen action for cycle detection
             if a == 'BOMB':
                 self.bomb_history.append((x, y))
-
+            #print(a)
+            #print(state_our)
             return a
