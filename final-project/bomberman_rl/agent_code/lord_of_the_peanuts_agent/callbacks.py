@@ -353,6 +353,14 @@ def state_to_features(self, game_state: dict) -> np.array:
 
         for idx, coin in enumerate(coins):
 
+            # Only calculate coins that are accessible
+            if new_field[coin[0]][coin[1]] == 0:
+                continue
+
+            # Skip coins that spawn/are at agent location
+            if self_position == tuple(coin):
+                    continue
+
             temp_coin_stats = get_distance_and_move(start=self_position,
                                                     end=tuple(coin),
                                                     graph=graph,
