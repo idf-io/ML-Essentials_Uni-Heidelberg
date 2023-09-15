@@ -7,7 +7,8 @@ from collections import namedtuple, deque
 from .dqnmodel import ReplayMemory,DQN
 import gym
 import gym_toytext
-
+import random
+import math
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -102,33 +103,34 @@ def act(self, game_state: dict) -> str:
     state_numpy=state_to_features(game_state)
     #invert into torch tensor
     state = torch.tensor(state_numpy, dtype=torch.float32, device=device).unsqueeze(0)
-    for t in count():
-        action = select_action(game_state)
-        #observation, reward, terminated, truncated, _ = env.step(action.item())
-        reward = torch.tensor([reward], device=device)
-        done = terminated or truncated
 
-        if terminated:
-            next_state = None
-        else:
-            next_state = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)
+    action = select_action(self,state)
+    '''
+    observation, reward, terminated, truncated, _ = env.step(action.item())
+    reward = torch.tensor([reward], device=device)
+    done = terminated or truncated
 
-        # Store the transition in memory
-        memory.push(state, action, next_state, reward)
+    if terminated:
+        next_state = None
+    else:
+        next_state = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)
 
-        # Move to the next state
-        state = next_state
+    # Store the transition in memory
+    memory.push(state, action, next_state, reward)
 
-        # Perform one step of the optimization (on the policy network)
-        optimize_model()
+    # Move to the next state
+    state = next_state
+    '''
+    # Perform one step of the optimization (on the policy network)
+    optimize_model(self)
 
-        # Soft update of the target network's weights
-        # θ′ ← τ θ + (1 −τ )θ′
-        target_net_state_dict = target_net.state_dict()
-        policy_net_state_dict = policy_net.state_dict()
-        for key in policy_net_state_dict:
-            target_net_state_dict[key] = policy_net_state_dict[key] * TAU + target_net_state_dict[key] * (1 - TAU)
-        self.target_net.load_state_dict(target_net_state_dict)
+    # Soft update of the target network's weights
+    # θ′ ← τ θ + (1 −τ )θ′
+    target_net_state_dict = self.target_net.state_dict()
+    policy_net_state_dict = self.policy_net.state_dict()
+    for key in policy_net_state_dict:
+        target_net_state_dict[key] = policy_net_state_dict[key] * self.TAU + target_net_state_dict[key] * (1 - self.TAU)
+    self.target_net.load_state_dict(target_net_state_dict)
 
 
     return action
@@ -136,11 +138,15 @@ def act(self, game_state: dict) -> str:
 
 
 def select_action(self,state):
-    '''
+    # will select an action accordingly to an epsilon greedy policy.
+    # Simply put, we’ll sometimes use our model for choosing the action,
+    # and sometimes we’ll just sample one uniformly. The probability of choosing
+    # a random action will start at and will decay exponentially towards .
+    # controls the rate of the decay.EPS_STARTEPS_ENDEPS_DECAY
     global steps_done
     sample = random.random()
-    eps_threshold = EPS_END + (EPS_START - EPS_END) * \
-        math.exp(-1. * steps_done / EPS_DECAY)
+    eps_threshold = self.EPS_END + (self.EPS_START - self.EPS_END) * \
+        math.exp(-1. * steps_done / self.EPS_DECAY)
     steps_done += 1
     if sample > eps_threshold:
         with torch.no_grad():
@@ -149,7 +155,8 @@ def select_action(self,state):
             # found, so we pick action with the larger expected reward.
             return self.policy_net(state).max(1)[1].view(1, 1)
     else:
-        return torch.tensor([[env.action_space.sample()]], device=device, dtype=torch.long)
+        #return torch.tensor([[env.action_space.sample()]], device=device, dtype=torch.long)
+        return np.random.choice(ACTIONS)
     '''
     if self.train and np.random.rand() < self.epsilon:
         return np.random.choice(ACTIONS)
@@ -157,6 +164,8 @@ def select_action(self,state):
     q_values = self.q_table.get(tuple(state), {a: 0.0 for a in ACTIONS})
     max_q = max(q_values.values())
     best_actions = [a for a, q in q_values.items() if q == max_q]
+    return np.random.choice(best_actions)
+    '''
 
 def optimize_model(self):
     if len(self.memory)<self.BATCH_SIZE:
