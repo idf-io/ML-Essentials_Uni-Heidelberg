@@ -96,9 +96,9 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
 
     # Append custom events for moving towards/away from coin
     if e.COIN_COLLECTED not in events:
-        if new_state[len(new_state) - 1] < old_state[len(old_state) - 1]:
+        if new_state[len(new_state) - 2] < old_state[len(old_state) - 2]:
             events.append(MOVE_CLOSER_TO_COIN)
-        elif new_state[len(new_state) - 1] > old_state[len(old_state) - 1]:
+        elif new_state[len(new_state) - 2] > old_state[len(old_state) - 2]:
             events.append(MOVE_AWAY_FROM_COIN)
     # Calculate reward based on events
     reward = reward_from_events(self, events)
