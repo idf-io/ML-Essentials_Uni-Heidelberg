@@ -233,14 +233,13 @@ def array2graph(array, nogo: list = [-1, 1]) -> dict:
     return graph
 
 
-def breadth_first_search(graph: dict, start: tuple, end:tuple, nr_nodes: int):
+def breadth_first_search(graph: dict, start: tuple, end: tuple, nr_nodes: int):
     visited = deque(maxlen=nr_nodes)
     queue = deque(maxlen=nr_nodes)
     prev = {}
 
     visited.append(start)
     queue.append(start)
-
 
     while queue:
 
@@ -281,7 +280,6 @@ def reconstruct_path(start: tuple, end: tuple, prev: dict):
 
 
 def get_distance_and_move(start: tuple, end: tuple, graph: dict, nr_nodes: int):
-
     prev = breadth_first_search(graph, start, end, nr_nodes)
     shortest_path = reconstruct_path(start, end, prev)
 
@@ -359,8 +357,7 @@ def state_to_features(self, game_state: dict) -> np.array:
 
             # Skip coins that spawn/are at agent location
             if self_position == tuple(coin):
-                    continue
-
+                continue
             temp_coin_stats = get_distance_and_move(start=self_position,
                                                     end=tuple(coin),
                                                     graph=graph,
@@ -372,12 +369,10 @@ def state_to_features(self, game_state: dict) -> np.array:
                 closest_coin = coin
 
             else:
-                
-                if temp_coin_stats[1] < closest_coin_stats[1]:
 
+                if temp_coin_stats[1] < closest_coin_stats[1]:
                     closest_coin_stats = temp_coin_stats
                     closest_coin = coin
-
 
         x = list("{0:04b}".format(closest_coin[0]))
         x = [int(i) for i in x]
@@ -388,8 +383,7 @@ def state_to_features(self, game_state: dict) -> np.array:
         features.extend(closest_coin)
 
     else:
-        features.extend([0] * 8)
-
+        features.extend([0] * 2)
 
     # ADD FEATURE: Agent's position in binary
     x = list("{0:04b}".format(self_position[0]))
@@ -400,11 +394,14 @@ def state_to_features(self, game_state: dict) -> np.array:
     self_position_bin = [*x, *y]
     features.extend(self_position_bin)
 
-    # ADD FEATURE: Distance of closest coin to agent
-    features.append(closest_coin_stats[1])
+    try:
+        # ADD FEATURE: Distance of closest coin to agent
+        features.append(closest_coin_stats[1])
 
-    # ADD FEATURE: Move closer to closest coin
-    features.append(closest_coin_stats[0])
+        # ADD FEATURE: Move closer to closest coin
+        features.append(closest_coin_stats[0])
+    except UnboundLocalError:
+        features.extend([0] * 2)
 
     return np.array(features)
 
