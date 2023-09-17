@@ -369,8 +369,11 @@ def state_to_features(self, game_state: dict) -> np.array:
                 closest_coin = coin
 
             else:
-
-                if temp_coin_stats[1] < closest_coin_stats[1]:
+                try:
+                    if temp_coin_stats[1] < closest_coin_stats[1]:
+                        closest_coin_stats = temp_coin_stats
+                        closest_coin = coin
+                except UnboundLocalError:
                     closest_coin_stats = temp_coin_stats
                     closest_coin = coin
 
