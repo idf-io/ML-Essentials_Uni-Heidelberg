@@ -28,7 +28,7 @@ def setup(self):
 def act(self, game_state: dict) -> str:
     if game_state is None:
         return np.random.choice(ACTIONS)
-"""
+    """
     # function to be continued: save bombs from previous round bc explosion lasts for an extra step
     self.bombs_prev_step = []
     for bomb in game_state['bombs']:
@@ -36,7 +36,7 @@ def act(self, game_state: dict) -> str:
             self.bombs_prev_step.append(bomb)
     self.bombs_prev_step = game_state['bombs']
     print(game_state['step'], self.bombs_prev_step)
-"""
+    """
     state = state_to_features(self, game_state)
     if self.train and np.random.rand() < self.epsilon:
         return np.random.choice(ACTIONS)
