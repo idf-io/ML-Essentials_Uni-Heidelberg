@@ -104,7 +104,7 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
             events.append(MOVE_AWAY_FROM_COIN)
     # Append custom event for dropping bombs when it's not supposed to
     if self_action == 'BOMB':
-        if new_state[-1]:
+        if old_state[-1]:
             events.append(LOADED)
         else:
             events.append(NOT_LOADED)
@@ -133,7 +133,7 @@ def reward_from_events(self, events: List[str]) -> float:
         e.SURVIVED_ROUND: 0,
         e.COIN_FOUND: 100,
         e.GOT_KILLED: 0,
-        e.CRATE_DESTROYED: 0,
+        e.CRATE_DESTROYED: 50,
         PLACEHOLDER_EVENT: 0,
         e.INVALID_ACTION: -50.0,
         MOVE_CLOSER_TO_COIN: 100.0,
