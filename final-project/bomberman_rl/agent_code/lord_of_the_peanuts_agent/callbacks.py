@@ -7,11 +7,12 @@ from datetime import datetime
 
 from collections import deque
 
-ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT']
+ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT', 'BOMB']
 
 
 def setup(self):
     # self.self_positions = deque(maxlen=30)
+    self.bombs_prev_step = []
     if self.args.command_name == "play":
         qtable_load = self.args.qtable
 
@@ -27,7 +28,15 @@ def setup(self):
 def act(self, game_state: dict) -> str:
     if game_state is None:
         return np.random.choice(ACTIONS)
-
+"""
+    # function to be continued: save bombs from previous round bc explosion lasts for an extra step
+    self.bombs_prev_step = []
+    for bomb in game_state['bombs']:
+        if bomb[1] == 0:
+            self.bombs_prev_step.append(bomb)
+    self.bombs_prev_step = game_state['bombs']
+    print(game_state['step'], self.bombs_prev_step)
+"""
     state = state_to_features(self, game_state)
     if self.train and np.random.rand() < self.epsilon:
         return np.random.choice(ACTIONS)
@@ -396,6 +405,24 @@ def state_to_features(self, game_state: dict) -> np.array:
 
     self_position_bin = [*x, *y]
     features.extend(self_position_bin)
+    """
+    Probably to be deleted bc we already have this...
+    #Life-saving features, e.g. whether or not the agent is in the path of a bomb which is about to explode.
+    layers = 3
+    bomb_area = []
+    if len(game_state['bombs']) > 0:
+        for x in range(game_state['bombs'][0][0][0] - layers, game_state['bombs'][0][0][0] + layers + 1):
+            bomb_area.append([x,game_state['bombs'][0][0][1]])
+
+        for y in range(game_state['bombs'][0][0][1]- layers, game_state['bombs'][0][0][1] + layers + 1):
+            bomb_area.append([game_state['bombs'][0][0][0], y])
+
+
+    if list(self_position) in bomb_area:
+        features.extend([1])
+    else:
+        features.extend([0])
+    """
 
     try:
         # ADD FEATURE: Distance of closest coin to agent
@@ -406,6 +433,8 @@ def state_to_features(self, game_state: dict) -> np.array:
     except UnboundLocalError:
         features.extend([0] * 2)
 
+    # ADD FEATURE: Dropping bomb possible or not
+    features.extend([game_state['self'][2]])
     return np.array(features)
 
 
