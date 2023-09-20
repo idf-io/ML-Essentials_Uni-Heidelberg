@@ -4,6 +4,7 @@ import numpy as np
 import events as e
 from .callbacks import state_to_features, ACTIONS
 from typing import List
+import time
 
 Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
 
@@ -115,8 +116,8 @@ def is_action_invalid(state, action):
 
 def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_state: dict, events: List[str]):
     self.logger.debug(f'Encountered game event(s) {", ".join(map(repr, events))} in step {new_game_state["step"]}')
-    old_state = state_to_features(self, old_game_state)
-    new_state = state_to_features(self, new_game_state)
+    old_state = state_to_features(self, old_game_state, self.bombs_prev_step, debug=True)
+    new_state = state_to_features(self, new_game_state, old_game_state["bombs"])
 
     """
     if new_state[27] == 1:
@@ -164,17 +165,34 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
     reward = reward_from_events(self, events)
     # add transitions to the replay buffer (store the state, action, next state, and reward)
     self.transitions.append(
-        Transition(state_to_features(self, old_game_state), self_action, state_to_features(self, new_game_state),
+        Transition(state_to_features(self, old_game_state, self.bombs_prev_step), self_action, state_to_features(self, new_game_state, old_game_state["bombs"]),
                    reward))
     # Gradually decrease epsilon
     self.epsilon = max(self.epsilon * self.epsilon_decay, self.min_epsilon)
+
+    # function to be continued: save bombs from previous round bc explosion lasts for an extra step
+    self.bombs_prev_step = []
+    for bomb in old_game_state['bombs']:
+        if bomb[1] == 0: # if the bomb is about to explode
+            self.bombs_prev_step.append(bomb)
+    time.sleep(15)
+
+
 
 
 def end_of_round(self, last_game_state: dict, last_action: str, events: List[str]):
     self.logger.debug(f'Encountered event(s) {", ".join(map(repr, events))} in final step')
     update_q_values(self, self.gamma)
     reward = reward_from_events(self, events)
-    self.transitions.append(Transition(state_to_features(self, last_game_state), last_action, None, reward))
+    self.transitions.append(Transition(state_to_features(self, last_game_state, self.bombs_prev_step, debug=True), last_action, None, reward))
+
+    # function to be continued: save bombs from previous round bc explosion lasts for an extra step
+    self.bombs_prev_step = []
+    for bomb in last_game_state['bombs']:
+        if bomb[1] == 0:  # if the bomb is about to explode
+            self.bombs_prev_step.append(bomb)
+
+    time.sleep(15)
 
 
 def reward_from_events(self, events: List[str]) -> float:

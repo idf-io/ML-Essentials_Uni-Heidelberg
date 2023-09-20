@@ -7,6 +7,7 @@ from datetime import datetime
 
 from collections import deque
 
+
 ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT', 'BOMB']
 
 
@@ -28,16 +29,8 @@ def setup(self):
 def act(self, game_state: dict) -> str:
     if game_state is None:
         return np.random.choice(ACTIONS)
-    """
-    # function to be continued: save bombs from previous round bc explosion lasts for an extra step
-    self.bombs_prev_step = []
-    for bomb in game_state['bombs']:
-        if bomb[1] == 0:
-            self.bombs_prev_step.append(bomb)
-    self.bombs_prev_step = game_state['bombs']
-    print(game_state['step'], self.bombs_prev_step)
-    """
-    state = state_to_features(self, game_state)
+
+    state = state_to_features(self, game_state, self.bombs_prev_step)
     if self.train and np.random.rand() < self.epsilon:
         return np.random.choice(ACTIONS)
 
@@ -284,7 +277,7 @@ def get_distance_and_move(start: tuple, end: tuple, graph: dict, nr_nodes: int):
     return (move, distance, shortest_path)
 
 
-def state_to_features(self, game_state: dict) -> np.array:
+def state_to_features(self, game_state: dict, bombs_prev_round: list, debug: bool = False) -> np.array:
     if game_state is None:
         return None
 
@@ -292,8 +285,23 @@ def state_to_features(self, game_state: dict) -> np.array:
     field = game_state["field"]
     self_position = game_state["self"][3]
     new_field = field2bomb(game_state)
+
+    # Update the explosion tiles to previous rounds explosion
+    bomb_mask = np.zeros([COLS,COLS])
+    for bomb in bombs_prev_round:
+        if bomb[1] == 0:
+            bomb_mask[max(bomb[0][0] - BOMB_POWER, 0):min(bomb[0][0] + BOMB_POWER + 1, COLS), bomb[0][1]] = 1
+            bomb_mask[bomb[0][0]][max(bomb[0][1] - BOMB_POWER, 0):min(bomb[0][1] + BOMB_POWER + 1, COLS)] = 1
+
+    updated_mask = (new_field == 0) & np.array(bomb_mask, dtype=bool)
+    new_field = np.where(updated_mask, 2, new_field)
+
+
     new_field = field2coin(game_state, new_field)
-    # self.self_positions.append(self_position)
+
+    if debug:
+        print(f"Step: {game_state['step']}")
+        print(new_field.T)
 
     # !!think more about the features, such as vector to all coins
 
