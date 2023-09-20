@@ -13,15 +13,22 @@ SCENARIOS = {
         "CRATE_DENSITY": 0, 
         "COIN_COUNT": 0 
     },
+    # Milestone 1
     "coin-heaven": {
         "CRATE_DENSITY": 0,
         "COIN_COUNT": 50
     },
+    # Milestone 2.1
     "loot-crate": { 
         "CRATE_DENSITY": 0.5,
         "COIN_COUNT": 50 
-    }, 
-    # this is the tournament game mode
+    },
+    # Milestone 2.2
+    "loot-crate": {
+        "CRATE_DENSITY": 0.75,
+        "COIN_COUNT": 50
+    },
+    # Milestone 3&4: this is the tournament game mode
     "classic": {
         "CRATE_DENSITY": 0.75,
         "COIN_COUNT": 9
