@@ -13,7 +13,14 @@ PLACEHOLDER_EVENT = "PLACEHOLDER"
 # Add custom events
 MOVE_CLOSER_TO_COIN = "MOVE_CLOSER_TO_COIN"
 MOVE_AWAY_FROM_COIN = "MOVE_AWAY_FROM_COIN"
-#GOT_STUCK = "GOT_STUCK"
+LOADED = 'LOADED'
+NOT_LOADED = 'NOT_LOADED'
+NEAR_DANGER = 'NEAR_DANGER'
+MOVE_AWAY_BOMB = 'MOVE_AWAY_BOMB'
+MOVE_TOWARDS_BOMB = 'MOVE_TOWARDS_BOMB'
+
+
+# GOT_STUCK = "GOT_STUCK"
 
 
 def setup_training(self):
@@ -59,7 +66,6 @@ def update_q_values(self, gamma):
 
 
 def is_action_invalid(state, action):
-
     """
     if action == 'RIGHT' and all(state[21:24] == [1, 1, 0]):
         return True
@@ -96,11 +102,42 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
 
     # Append custom events for moving towards/away from coin
     if e.COIN_COLLECTED not in events:
-        if new_state[len(new_state) - 2] < old_state[len(old_state) - 2]:
+        if new_state[-3] < old_state[-3]:
             events.append(MOVE_CLOSER_TO_COIN)
-        elif new_state[len(new_state) - 2] > old_state[len(old_state) - 2]:
+        elif new_state[-3] > old_state[-3]:
             events.append(MOVE_AWAY_FROM_COIN)
+    # Append custom event for dropping bombs when it's not supposed to
+    if self_action == 'BOMB':
+        if old_state[-1]:
+            events.append(LOADED)
+        else:
+            events.append(NOT_LOADED)
+
+    # if any(all(new_state[i:i + 3] == [1, 0, 0]) for i in range(0, 12, 3)):
+    #   events.append(NEAR_DANGER)
+    centre_cell = int(len(new_state[:-13]) / 2)
+
+    if old_state[centre_cell - 1: centre_cell + 2].tolist() == [1, 0, 0]:
+        on_bomb_old = 1
+    else:
+        on_bomb_old = 0
+
+    if new_state[centre_cell - 1: centre_cell + 2].tolist() == [1, 0, 0]:
+        on_bomb = 1
+    else:
+        on_bomb = 0
+
     # Calculate reward based on events
+    change = on_bomb - on_bomb_old
+    if change == 1:
+        events.append(MOVE_TOWARDS_BOMB)
+    elif change == -1:
+        events.append(MOVE_AWAY_BOMB)
+    elif on_bomb == 1 and on_bomb_old == 1:
+        events.append(MOVE_TOWARDS_BOMB)
+    elif on_bomb == 0 and on_bomb_old == 0:
+        events.append(MOVE_AWAY_BOMB)
+
     reward = reward_from_events(self, events)
     # add transitions to the replay buffer (store the state, action, next state, and reward)
     self.transitions.append(
@@ -121,17 +158,23 @@ def reward_from_events(self, events: List[str]) -> float:
     game_rewards = {
         e.COIN_COLLECTED: 200.0,
         e.KILLED_OPPONENT: 0,
-        e.KILLED_SELF: 0,
+        e.KILLED_SELF: -200,
         e.SURVIVED_ROUND: 0,
-        e.COIN_FOUND: 0,
+        e.COIN_FOUND: 100,
         e.GOT_KILLED: 0,
-        e.CRATE_DESTROYED: 0,
+        e.CRATE_DESTROYED: 10,
+        e.BOMB_DROPPED: 20,
         PLACEHOLDER_EVENT: 0,
         e.INVALID_ACTION: -50.0,
         MOVE_CLOSER_TO_COIN: 100.0,
         MOVE_AWAY_FROM_COIN: -100.0,
         e.WAITED: 0,
-        #GOT_STUCK: -100.0
+        LOADED: 50,
+        NOT_LOADED: -50,
+        NEAR_DANGER: -200,
+        MOVE_TOWARDS_BOMB: -150,
+        MOVE_AWAY_BOMB: 150
+        # GOT_STUCK: -100.0
     }
     reward_sum = 0.0
     for event in events:

@@ -7,11 +7,12 @@ from datetime import datetime
 
 from collections import deque
 
-ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT']
+ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT', 'BOMB']
 
 
 def setup(self):
     # self.self_positions = deque(maxlen=30)
+    self.bombs_prev_step = []
     if self.args.command_name == "play":
         qtable_load = self.args.qtable
 
@@ -27,7 +28,15 @@ def setup(self):
 def act(self, game_state: dict) -> str:
     if game_state is None:
         return np.random.choice(ACTIONS)
-
+    """
+    # function to be continued: save bombs from previous round bc explosion lasts for an extra step
+    self.bombs_prev_step = []
+    for bomb in game_state['bombs']:
+        if bomb[1] == 0:
+            self.bombs_prev_step.append(bomb)
+    self.bombs_prev_step = game_state['bombs']
+    print(game_state['step'], self.bombs_prev_step)
+    """
     state = state_to_features(self, game_state)
     if self.train and np.random.rand() < self.epsilon:
         return np.random.choice(ACTIONS)
@@ -79,7 +88,7 @@ def state2position_features_cross(game_state, agent_position) -> list:
     - game_state: np.array
     - agent_position: list
     Output:
-    - features: list (len=12=4*3)
+    - features: list (len=15=5*3)
     """
 
     features = []
@@ -88,6 +97,7 @@ def state2position_features_cross(game_state, agent_position) -> list:
     cells = (
         (agent_position[0] - 1, agent_position[1]),
         (agent_position[0] + 1, agent_position[1]),
+        (agent_position[0], agent_position[1]),
         (agent_position[0], agent_position[1] - 1),
         (agent_position[0], agent_position[1] + 1)
     )
@@ -186,8 +196,8 @@ def state2position_features_rings(game_state, agent_position, layers: int = 1) -
                 assert False, f"Cell value {cell} not expected nor covered in map above."
 
     # Remove centre cell
-    centre_cell = int(len(features) / 2)
-    del features[centre_cell - 1: centre_cell + 2]
+    # centre_cell = int(len(features) / 2)
+    # del features[centre_cell - 1: centre_cell + 2]
 
     return features
 
@@ -402,6 +412,8 @@ def state_to_features(self, game_state: dict) -> np.array:
     except UnboundLocalError:
         features.extend([0] * 2)
 
+    # ADD FEATURE: Dropping bomb possible or not
+    features.extend([game_state['self'][2]])
     return np.array(features)
 
 
