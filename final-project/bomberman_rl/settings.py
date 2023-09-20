@@ -24,7 +24,7 @@ SCENARIOS = {
         "COIN_COUNT": 50 
     },
     # Milestone 2.2
-    "loot-crate": {
+    "loot-crate-2": {
         "CRATE_DENSITY": 0.75,
         "COIN_COUNT": 50
     },
