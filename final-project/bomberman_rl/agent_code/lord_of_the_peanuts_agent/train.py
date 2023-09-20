@@ -113,9 +113,9 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
         else:
             events.append(NOT_LOADED)
 
-    # if any(all(new_state[i:i + 3] == [1, 0, 0]) for i in range(0, 12, 3)):
-    #   events.append(NEAR_DANGER)
-    centre_cell = int(len(new_state[:-13]) / 2)
+    #print(new_state)
+    #print(new_state[:-7])
+    centre_cell = int(len(new_state[:-7]) / 2)
 
     if old_state[centre_cell - 1: centre_cell + 2].tolist() == [1, 0, 0]:
         on_bomb_old = 1
