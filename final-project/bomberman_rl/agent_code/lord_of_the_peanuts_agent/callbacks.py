@@ -88,7 +88,7 @@ def state2position_features_cross(game_state, agent_position) -> list:
     - game_state: np.array
     - agent_position: list
     Output:
-    - features: list (len=12=4*3)
+    - features: list (len=15=5*3)
     """
 
     features = []
@@ -97,6 +97,7 @@ def state2position_features_cross(game_state, agent_position) -> list:
     cells = (
         (agent_position[0] - 1, agent_position[1]),
         (agent_position[0] + 1, agent_position[1]),
+        (agent_position[0], agent_position[1]),
         (agent_position[0], agent_position[1] - 1),
         (agent_position[0], agent_position[1] + 1)
     )
