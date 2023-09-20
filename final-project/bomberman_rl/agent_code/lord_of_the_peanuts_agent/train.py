@@ -43,7 +43,7 @@ def update_q_values(self, gamma):
         next_state = transition.next_state
 
         if is_action_invalid(state, action):
-            updated_q_value = -100.0
+            updated_q_value = -300.0
         else:
             q_value = self.q_table.get(tuple(state), {}).get(action, 0.0)
             if next_state is None:
@@ -78,13 +78,36 @@ def is_action_invalid(state, action):
     else:
         return False
     """
-    if action == 'LEFT' and all(state[0:3] == [1, 1, 0]):
+
+    state = state.tolist()
+
+    # Wall: [1, 1, 0]
+    # Crate: [0, 1, 0]
+    # Bomb: [1, 0, 0]
+
+    if action == 'LEFT' and ( \
+            state[0:3] == [1, 1, 0] or \
+            state[0:3] == [0, 1, 0] or \
+            state[0:3] == [1, 0, 0]
+            ):
         return True
-    elif action == 'RIGHT' and all(state[3:6] == [1, 1, 0]):
+    elif action == 'RIGHT' and ( \
+                state[3:6] == [1, 1, 0] or \
+                state[3:6] == [0, 1, 0] or \
+                state[3:6] == [1, 0, 0]
+        ):
         return True
-    elif action == 'UP' and all(state[6:9] == [1, 1, 0]):
+    elif action == 'UP' and ( \
+                state[9:12] == [1, 1, 0] or \
+                state[9:12] == [0, 1, 0] or \
+                state[9:12] == [1, 0, 0]
+        ):
         return True
-    elif action == 'DOWN' and all(state[9:12] == [1, 1, 0]):
+    elif action == 'DOWN' and ( \
+                state[12:15] == [1, 1, 0] or \
+                state[12:15] == [0, 1, 0] or \
+                state[12:15] == [1, 0, 0]
+        ):
         return True
     else:
         return False
@@ -158,10 +181,10 @@ def reward_from_events(self, events: List[str]) -> float:
     game_rewards = {
         e.COIN_COLLECTED: 200.0,
         e.KILLED_OPPONENT: 0,
-        e.KILLED_SELF: -200,
+        e.KILLED_SELF: -100,
         e.SURVIVED_ROUND: 0,
         e.COIN_FOUND: 100,
-        e.GOT_KILLED: 0,
+        e.GOT_KILLED: -300,
         e.CRATE_DESTROYED: 10,
         e.BOMB_DROPPED: 20,
         PLACEHOLDER_EVENT: 0,
