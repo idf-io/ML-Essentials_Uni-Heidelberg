@@ -43,7 +43,7 @@ def update_q_values(self, gamma):
         next_state = transition.next_state
 
         if is_action_invalid(state, action):
-            updated_q_value = -300.0
+            updated_q_value = -500.0
         else:
             q_value = self.q_table.get(tuple(state), {}).get(action, 0.0)
             if next_state is None:
@@ -184,7 +184,7 @@ def reward_from_events(self, events: List[str]) -> float:
         e.KILLED_SELF: -100,
         e.SURVIVED_ROUND: 0,
         e.COIN_FOUND: 100,
-        e.GOT_KILLED: -300,
+        e.GOT_KILLED: -400,
         e.CRATE_DESTROYED: 10,
         e.BOMB_DROPPED: 20,
         PLACEHOLDER_EVENT: 0,
