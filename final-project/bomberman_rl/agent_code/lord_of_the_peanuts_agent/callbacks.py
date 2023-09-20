@@ -301,7 +301,7 @@ def get_distance_and_move(start: tuple, end: tuple, graph: dict, nr_nodes: int):
         # Pseudo-right
         move = 4
 
-    distance = len(shortest_path)
+    distance = len(shortest_path) - 1
 
     return (move, distance, shortest_path)
 
@@ -342,8 +342,9 @@ def state_to_features(self, game_state: dict) -> np.array:
         features.extend([0])
     """
 
-    coins = np.array(game_state['coins'], dtype="int")
-    if len(coins) > 0:
+    coins = game_state['coins']
+
+    if len(coins) > 0 and (coins != [self_position]):
 
         # ADD FEATURES: closest coin stats
 
@@ -356,14 +357,14 @@ def state_to_features(self, game_state: dict) -> np.array:
                 continue
 
             # Skip coins that spawn/are at agent location
-            if self_position == tuple(coin):
+            if self_position == coin:
                 continue
             temp_coin_stats = get_distance_and_move(start=self_position,
-                                                    end=tuple(coin),
+                                                    end=coin,
                                                     graph=graph,
                                                     nr_nodes=15 * 15)
 
-            if idx == 0:
+            if idx == 0 or (idx == 1 and coins[0] == self_position):
 
                 closest_coin_stats = temp_coin_stats
                 closest_coin = coin
@@ -374,6 +375,13 @@ def state_to_features(self, game_state: dict) -> np.array:
                         closest_coin_stats = temp_coin_stats
                         closest_coin = coin
                 except UnboundLocalError:
+                    print(f"self_position: {self_position}")
+                    print(f"coins: {coins}")
+                    print(f"idx: {idx}")
+                    print(f"coin: {coin}")
+                    print(f"temp_coin_stats: {temp_coin_stats}")
+                    print(f"closest_coin_stats: {closest_coin_stats}")
+
                     closest_coin_stats = temp_coin_stats
                     closest_coin = coin
 
