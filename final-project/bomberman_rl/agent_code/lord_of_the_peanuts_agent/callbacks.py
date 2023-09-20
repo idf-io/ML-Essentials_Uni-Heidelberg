@@ -385,12 +385,6 @@ def state_to_features(self, game_state: dict) -> np.array:
                     closest_coin_stats = temp_coin_stats
                     closest_coin = coin
 
-        x = list("{0:04b}".format(closest_coin[0]))
-        x = [int(i) for i in x]
-        y = list("{0:04b}".format(closest_coin[1]))
-        y = [int(i) for i in y]
-
-        nearest_coin_bin = [*x, *y]
         features.extend(closest_coin)
 
     else:
