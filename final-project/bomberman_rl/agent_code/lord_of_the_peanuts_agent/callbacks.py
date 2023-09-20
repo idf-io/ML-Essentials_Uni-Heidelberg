@@ -195,8 +195,8 @@ def state2position_features_rings(game_state, agent_position, layers: int = 1) -
                 assert False, f"Cell value {cell} not expected nor covered in map above."
 
     # Remove centre cell
-    centre_cell = int(len(features) / 2)
-    del features[centre_cell - 1: centre_cell + 2]
+    # centre_cell = int(len(features) / 2)
+    # del features[centre_cell - 1: centre_cell + 2]
 
     return features
 
