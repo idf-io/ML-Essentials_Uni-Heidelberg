@@ -301,7 +301,7 @@ def get_distance_and_move(start: tuple, end: tuple, graph: dict, nr_nodes: int):
         # Pseudo-right
         move = 4
 
-    distance = len(shortest_path)
+    distance = len(shortest_path) - 1
 
     return (move, distance, shortest_path)
 
