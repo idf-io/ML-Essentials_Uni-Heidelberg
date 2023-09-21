@@ -20,6 +20,22 @@ steps_done = 0
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
+def tensor2str(action):
+    if (action == torch.tensor([1])):
+        return 'UP'
+    elif (action == torch.tensor([2])):
+        return 'RIGHT'
+    elif (action == torch.tensor([3])):
+        return 'DOWN'
+    elif (action == torch.tensor([4])):
+        return 'LEFT'
+    elif (action == torch.tensor([5])):
+        return 'WAIT'
+    elif (action == torch.tensor([6])):
+        return 'BOMB'
+    else:
+        return None
+
 def setup(self):
 
 
@@ -61,6 +77,8 @@ def act(self, game_state: dict) -> str:
 
     action = select_action(self,state)
 
+    if (action not in ACTIONS):
+        action=None
 
     return action
     #return np.random.choice(best_actions)

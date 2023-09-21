@@ -21,6 +21,8 @@ from settings import BOMB_POWER, COLS
 WorldArgs = namedtuple("WorldArgs",
                        ["no_gui", "fps", "turn_based", "update_interval", "save_replay", "replay", "make_video", "continue_without_training", "log_dir", "save_stats", "match_name", "seed", "silence_errors", "scenario"])
 
+Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
+
 datasets={}
 save_flag=1
 
@@ -119,7 +121,7 @@ class GenericWorld:
 
         color = self.colors.pop()
         agent = Agent(name, agent_dir, name, train, backend, color, color)
-        datasets[name]=[[],[]]#####state,action
+        datasets[name]={}#####transition
         self.agents.append(agent)
 
     def tile_is_free(self, x, y):
@@ -175,7 +177,8 @@ class GenericWorld:
         self.update_explosions()
         self.update_bombs()
         self.evaluate_explosions()
-        self.send_game_events()
+
+        self.send_game_events()#this one !!!! calls game_events_occured function
 
         if self.time_to_stop():
             self.end_round()
@@ -424,7 +427,6 @@ class BombeRLeWorld(GenericWorld):
     def poll_and_run_agents(self):
         # Tell agents to act
 
-        state_log=0
 
         for a in self.active_agents:
             state = self.get_state_for_agent(a)
@@ -455,14 +457,7 @@ class BombeRLeWorld(GenericWorld):
                     action = "ERROR"
                     think_time = float("inf")
 
-                #####
-                #action_log=action
-                #print("action_log:", action_log)
-                #print("state_log:", state_log)
 
-                #datasets[a.name][0].append(state_log)
-                #datasets[a.name][1].append(action_log)
-                ########
                 self.logger.info(f'Agent <{a.name}> chose action {action} in {think_time:.2f}s.')
                 if think_time > a.available_think_time:
                     next_think_time = a.base_timeout - (think_time - a.available_think_time)
@@ -484,6 +479,34 @@ class BombeRLeWorld(GenericWorld):
     def send_game_events(self):
         # Send events to all agents that expect them, then reset and wait for them
         for a in self.agents:
+
+            ##########
+            '''
+            #####
+            action_log = action
+            # print("action_log:", action_log)
+            # print("state_log:", state_log)
+            old_game_state = self.get_state_for_agent(a)
+            new_game_state = None
+            events = a.events
+            reward = reward_from_events(self, events)
+
+            datasets[a.name].append(
+                Transition(state_to_features(old_game_state), action, state_to_features(new_game_state), reward))
+            ########
+            '''
+            '''
+            #print(a.last_game_state)
+            old_game_state = state_to_features(a.last_game_state)
+            action = a.last_action
+            new_game_state = state_to_features(self.get_state_for_agent(a))
+            if( new_game_state is None): pass
+            else:new_game_state=str(new_game_state)
+            reward = reward_from_events(a.events)
+            #f.writelines(" ".join(str(i) for i in every_state))
+            datasets[a.name][self.step]=Transition(str(old_game_state), action, new_game_state,reward)
+            ##############
+            '''
             if a.train:
                 if not a.dead:
                     a.process_game_events(self.get_state_for_agent(a))
@@ -636,15 +659,8 @@ class GUI:
             #############
             global save_flag
             if(save_flag==1):
-                with open("test_state.txt","a") as f:
-                    for every_state in datasets[leading.display_name][0]:
-                        f.writelines(" ".join(str(i) for i in every_state))
-                        f.writelines("\n")
-                with open("test_action.txt","a") as f2:
-                    for every_action in datasets[leading.display_name][1]:
-                        f2.writelines(str(every_action))
-                        f2.writelines("\n")
-                #print(datasets[leading.display_name])
+                with open('datasets.json', 'a', encoding='utf8') as fp:
+                    json.dump(datasets[leading.display_name], fp, ensure_ascii=False)
                 save_flag=0
             #############
             '''
@@ -777,3 +793,20 @@ def field2coin(game_state: dict, new_field):
             new_field[coin[0]][coin[1]] = 3
 
     return new_field
+
+def reward_from_events(events: List[str]) -> float:
+    game_rewards = {
+        e.COIN_COLLECTED: 2.0,
+        e.KILLED_OPPONENT: 3.0,
+        e.KILLED_SELF: -2.0,
+        e.SURVIVED_ROUND: 3.0,
+        e.COIN_FOUND: 1.0,
+        e.GOT_KILLED: -2.0,
+        e.CRATE_DESTROYED: 2.0,
+        #PLACEHOLDER_EVENT: -0.1
+    }
+    reward_sum = 0.0
+    for event in events:
+        if event in game_rewards:
+            reward_sum += game_rewards[event]
+    return reward_sum

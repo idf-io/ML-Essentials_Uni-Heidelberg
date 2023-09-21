@@ -5,19 +5,20 @@ import matplotlib
 import matplotlib.pyplot as plt
 from collections import namedtuple, deque
 from itertools import count
-
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
-
+Transition = namedtuple('Transition',
+                        ('state', 'action', 'next_state', 'reward'))
 
 class ReplayMemory(object):
 
     def __init__(self, capacity):
         self.memory = deque([], maxlen=capacity)
-        print("self.memory:",self.memory)
+        #print("self.memory:",self.memory)
 
     def push(self, *args):
         """Save a transition"""
@@ -44,11 +45,19 @@ class DQN(nn.Module):
     # Called with either one element to determine next action, or a batch
     # during optimization. Returns tensor([[left0exp,right0exp]...]).
     def forward(self, x):
+        #print(x)
+        #print(self.layer1(x))
+        x=torch.from_numpy(np.asarray(x)).float()
+        #print("test1111",x.shape)
+        #temp=self.layer1(x)
+        #print("test222",temp.shape)
         x = F.relu(self.layer1(x))
+        #print("test3333", x.shape)
         x = F.relu(self.layer2(x))
-        return self.layer3(x)
-
-
+        #print("test4444", x.shape)
+        x=self.layer3(x)
+        res=torch.max(x,1)[1].data#return the max of column 1 and only take value
+        return res.reshape(1,res.shape[0])
 
 
 

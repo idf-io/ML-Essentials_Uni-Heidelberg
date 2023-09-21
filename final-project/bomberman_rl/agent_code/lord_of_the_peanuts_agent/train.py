@@ -9,10 +9,14 @@ from collections import namedtuple, deque
 from .dqnmodel import ReplayMemory,DQN
 import random
 import math
+import json
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
+import ast
+import re
+
 
 Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
 
@@ -23,6 +27,48 @@ PLACEHOLDER_EVENT = "PLACEHOLDER"
 ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT', 'BOMB']
 # if GPU is to be used
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+def jsonDecoder(Dict):
+    return namedtuple('Transition', Dict.keys())(*Dict.values())
+
+def back2nparray(text):
+
+    if(text is None):
+        return torch.zeros(29)
+
+    #print("1111111:",text)
+    # , -> " "
+    text = text.replace(",", " ")
+    #print("222222:", text)
+    # delete \n
+    text = text.replace('\n', '')
+    #print("333333:", text)
+    # add ','
+    xs = re.sub('\s+', ',', text)
+    xs="["+xs[2:]
+    #print("44444:", xs)
+    # invert into numpy.array
+    a = np.array(ast.literal_eval(xs))
+
+    return torch.tensor(a)
+
+def convert_action(action):
+    #'UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT', 'BOMB'
+    if(action=='UP'):
+        return torch.tensor([1])
+    elif(action=='RIGHT'):
+        return torch.tensor([2])
+    elif (action == 'DOWN'):
+        return torch.tensor([3])
+    elif (action == 'LEFT'):
+        return torch.tensor([4])
+    elif (action == 'WAIT'):
+        return torch.tensor([5])
+    elif (action == 'BOMB'):
+        return torch.tensor([6])
+    else:
+        return torch.tensor([0])
 
 
 def setup_training(self):
@@ -54,18 +100,32 @@ def setup_training(self):
 
     n_actions = len(ACTIONS)
 
-    n_observations = 29  # 3*9+2 game state /feature
+    self.n_observations = 29  # 3*9+2 game state /feature
 
-    self.policy_net = DQN(n_observations, n_actions).to(device)
-    self.target_net = DQN(n_observations, n_actions).to(device)
+    self.policy_net = DQN(self.n_observations, n_actions).to(device)
+    self.target_net = DQN(self.n_observations, n_actions).to(device)
     self.target_net.load_state_dict(self.policy_net.state_dict())
 
     self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=self.LR, amsgrad=True)
-    self.memory = ReplayMemory(100)
+    self.memory = ReplayMemory(1000)
     print(len(self.memory))
     self.steps_done = 0
     self.episode_durations = []
 
+
+    ########################
+    with open('../../datasets.json', 'r', encoding='utf8') as fp:
+        json_data = json.load(fp)#, object_hook=jsonDecoder)
+
+    #print(json_data)
+
+
+    for i in json_data:
+        action=convert_action(json_data[i][1])
+        #print(json_data[i])
+        self.memory.push(back2nparray(json_data[i][0]),action,back2nparray(json_data[i][2]),torch.tensor([int(json_data[i][3])]))
+    #back2nparray
+    #state_to_features(old_game_state), self_action, state_to_features(new_game_state), reward
     '''
     # Get the all the lines in file in a list
     action_log = []
@@ -143,6 +203,7 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
 
     reward = reward_from_events(self, events)
 
+    self.memory.push(torch.tensor(state_to_features(old_game_state)), convert_action(self_action), torch.tensor(state_to_features(new_game_state)), torch.tensor([int(reward)]))
 
     # Perform one step of the optimization (on the policy network)
     optimize_model(self)
@@ -162,7 +223,7 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
     self.logger.debug(f'Encountered event(s) {", ".join(map(repr, events))} in final step')
     #update_q_values(self, self.gamma)
     reward = reward_from_events(self, events)
-    self.transitions.append(Transition(state_to_features(last_game_state), last_action, None, reward))
+    self.transitions.append(Transition(torch.tensor(state_to_features(last_game_state)), last_action, None, torch.tensor([int(reward)])))
 
 def reward_from_events(self, events: List[str]) -> float:
     game_rewards = {
@@ -184,15 +245,17 @@ def reward_from_events(self, events: List[str]) -> float:
 
 def optimize_model(self):
     if len(self.memory)<self.BATCH_SIZE:
-        print(len(self.memory))
-        print(self.BATCH_SIZE)
+        print("noooo")
         return
+    #print("yessssss")
 
     transitions = self.memory.sample(self.BATCH_SIZE)
     # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
     # detailed explanation). This converts batch-array of Transitions
     # to Transition of batch-arrays.
     batch = Transition(*zip(*transitions))
+    #print("batch",batch)
+
 
     # Compute a mask of non-final states and concatenate the batch elements
     # (a final state would've been the one after which simulation ended)
@@ -201,8 +264,15 @@ def optimize_model(self):
     non_final_next_states = torch.cat([s for s in batch.next_state
                                        if s is not None])
     state_batch = torch.cat(batch.state)
+    #print(batch.action)
     action_batch = torch.cat(batch.action)
     reward_batch = torch.cat(batch.reward)
+
+    #print(state_batch)
+
+    state_batch=state_batch.reshape(self.BATCH_SIZE,self.n_observations)
+    action_batch = action_batch.reshape(1,action_batch.shape[0])
+    #print("action_batch", action_batch.shape)
 
     # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
     # columns of actions taken. These are the actions which would've been taken
@@ -215,10 +285,11 @@ def optimize_model(self):
     # This is merged based on the mask, such that we'll have either the expected
     # state value or 0 in case the state was final.
     next_state_values = torch.zeros(self.BATCH_SIZE, device=device)
+    non_final_next_states=non_final_next_states.reshape(self.BATCH_SIZE,self.n_observations)
     with torch.no_grad():
         next_state_values[non_final_mask] = self.target_net(non_final_next_states).max(1)[0]
     # Compute the expected Q values
-    expected_state_action_values = (next_state_values * GAMMA) + reward_batch
+    expected_state_action_values = (next_state_values * self.GAMMA) + reward_batch
 
     # Compute Huber loss
     criterion = nn.SmoothL1Loss()
@@ -226,6 +297,7 @@ def optimize_model(self):
 
     # Optimize the model
     self.optimizer.zero_grad()
+    loss.requires_grad_(True)
     loss.backward()
     # In-place gradient clipping
     torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
