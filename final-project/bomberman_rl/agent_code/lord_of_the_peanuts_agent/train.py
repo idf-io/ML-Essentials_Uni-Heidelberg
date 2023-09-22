@@ -60,25 +60,35 @@ def update_q_values(self, gamma):
 
 def is_action_invalid(state, action):
 
-    """
-    if action == 'RIGHT' and all(state[21:24] == [1, 1, 0]):
+    state = state.tolist()
+
+    # Wall: [1, 1, 0]
+    # Crate: [0, 1, 0]
+    # Bomb: [1, 0, 0]
+
+    if action == 'LEFT' and ( \
+                    state[0:3] == [1, 1, 0] or \
+                    state[0:3] == [0, 1, 0] or \
+                    state[0:3] == [1, 0, 0]
+    ):
         return True
-    elif action == 'LEFT' and all(state[3:6] == [1, 1, 0]):
+    elif action == 'RIGHT' and ( \
+                    state[3:6] == [1, 1, 0] or \
+                    state[3:6] == [0, 1, 0] or \
+                    state[3:6] == [1, 0, 0]
+    ):
         return True
-    elif action == 'UP' and all(state[9:12] == [1, 1, 0]):
+    elif action == 'UP' and ( \
+                    state[9:12] == [1, 1, 0] or \
+                    state[9:12] == [0, 1, 0] or \
+                    state[9:12] == [1, 0, 0]
+    ):
         return True
-    elif action == 'DOWN' and all(state[15:18] == [1, 1, 0]):
-        return True
-    else:
-        return False
-    """
-    if action == 'LEFT' and all(state[0:3] == [1, 1, 0]):
-        return True
-    elif action == 'RIGHT' and all(state[3:6] == [1, 1, 0]):
-        return True
-    elif action == 'UP' and all(state[6:9] == [1, 1, 0]):
-        return True
-    elif action == 'DOWN' and all(state[9:12] == [1, 1, 0]):
+    elif action == 'DOWN' and ( \
+                    state[12:15] == [1, 1, 0] or \
+                    state[12:15] == [0, 1, 0] or \
+                    state[12:15] == [1, 0, 0]
+    ):
         return True
     else:
         return False
