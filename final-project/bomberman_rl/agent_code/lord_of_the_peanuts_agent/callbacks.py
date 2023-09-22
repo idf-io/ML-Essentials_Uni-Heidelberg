@@ -88,6 +88,7 @@ def state2position_features_cross(game_state, agent_position) -> list:
     cells = (
         (agent_position[0] - 1, agent_position[1]),
         (agent_position[0] + 1, agent_position[1]),
+        (agent_position[0], agent_position[1]),
         (agent_position[0], agent_position[1] - 1),
         (agent_position[0], agent_position[1] + 1)
     )
