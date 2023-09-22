@@ -39,38 +39,6 @@ def act(self, game_state: dict) -> str:
     return np.random.choice(best_actions)
 
 
-def state_to_features_ori(game_state: dict) -> np.array:
-    if game_state is None:
-        return None
-
-    field = game_state["field"]
-    self_position = game_state["self"][3]
-    new_field = field2bomb(game_state)
-    new_field = field2coin(game_state, new_field)
-    layers = 1
-
-    features = []
-    for x in range(self_position[0] - layers, self_position[0] + layers + 1):
-        for y in range(self_position[1] - layers, self_position[1] + layers + 1):
-            cell = new_field[x, y]
-            if cell == 2:
-                features.extend([1, 0, 0])
-            elif cell == 1:
-                features.extend([0, 1, 0])
-            elif cell == 0:
-                features.extend([0, 1, 1])
-            elif cell == -1:
-                features.extend([1, 1, 0])
-            elif cell == 3:
-                features.extend([0, 0, 1])
-            else:
-                features.extend([1, 1, 1])
-
-    features.append(self_position[0])
-    features.append(self_position[1])
-    return np.array(features)
-
-
 def state2position_features_cross(game_state, agent_position) -> list:
     """
     Convert the game_state to an array of features describing the agent's surroundings.
@@ -311,37 +279,12 @@ def state_to_features(self, game_state: dict) -> list:
     if game_state is None:
         return None
 
-    # reset the field to accelerate the algorithm
-    field = game_state["field"]
     self_position = game_state["self"][3]
     new_field = field2bomb(game_state)
     new_field = field2coin(game_state, new_field)
-    # self.self_positions.append(self_position)
-
-    # !!think more about the features, such as vector to all coins
-
-    # reduce the feature
-
     features = state2position_features_cross(game_state=new_field,
                                              agent_position=self_position)
 
-    # layers = 1
-    #
-    # features = state2position_features_rings(game_state=new_field,
-    #                                          agent_position=self_position,
-    #                                          layers=layers)
-
-    # Append features of nearest coin location (x, y) coord in binary form (respectively 15 possibilities so 2^4 -> 4 features for each coordinate.
-    # E.g. max: 15 = b'1111'
-    #      min:  0 = b'0000'
-    # Mannhattan distance
-
-    """    
-    if check_if_agent_stuck(self.self_positions):
-        features.extend([1])
-    else:
-        features.extend([0])
-    """
 
     coins = np.array(game_state['coins'], dtype="int")
     if len(coins) > 0:
@@ -438,16 +381,3 @@ def field2coin(game_state: dict, new_field):
             new_field[coin[0]][coin[1]] = 3
 
     return new_field
-
-
-"""
-def check_if_agent_stuck(actions):
-    if len(actions) == 30:
-        unique_set = set(actions)
-        unique_count = len(unique_set)
-
-        if unique_count <= 2:
-            return True
-    else:
-        return False
-"""

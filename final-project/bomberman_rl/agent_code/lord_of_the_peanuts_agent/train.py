@@ -13,7 +13,6 @@ PLACEHOLDER_EVENT = "PLACEHOLDER"
 # Add custom events
 MOVE_CLOSER_TO_COIN = "MOVE_CLOSER_TO_COIN"
 MOVE_AWAY_FROM_COIN = "MOVE_AWAY_FROM_COIN"
-#GOT_STUCK = "GOT_STUCK"
 
 
 def setup_training(self):
@@ -95,14 +94,10 @@ def is_action_invalid(state, action):
 
 
 def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_state: dict, events: List[str]):
+
     self.logger.debug(f'Encountered game event(s) {", ".join(map(repr, events))} in step {new_game_state["step"]}')
     old_state, old_coin_dist = state_to_features(self, old_game_state)
     new_state, new_coin_dist = state_to_features(self, new_game_state)
-
-    """
-    if new_state[27] == 1:
-        events.append(GOT_STUCK)
-    """
 
     # Append custom events for moving towards/away from coin
     if e.COIN_COLLECTED not in events:
@@ -110,12 +105,15 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
             events.append(MOVE_CLOSER_TO_COIN)
         elif new_coin_dist > old_coin_dist:
             events.append(MOVE_AWAY_FROM_COIN)
+
     # Calculate reward based on events
     reward = reward_from_events(self, events)
+
     # add transitions to the replay buffer (store the state, action, next state, and reward)
     self.transitions.append(
         Transition(state_to_features(self, old_game_state)[0], self_action, state_to_features(self, new_game_state)[0],
                    reward))
+
     # Gradually decrease epsilon
     self.epsilon = max(self.epsilon * self.epsilon_decay, self.min_epsilon)
 
