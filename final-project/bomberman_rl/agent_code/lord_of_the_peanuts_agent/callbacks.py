@@ -286,8 +286,9 @@ def state_to_features(self, game_state: dict) -> list:
                                              agent_position=self_position)
 
 
-    coins = np.array(game_state['coins'], dtype="int")
-    if len(coins) > 0:
+    coins = game_state['coins']
+
+    if len(coins) > 0 and (coins != [self_position]):
 
         # ADD FEATURES: closest coin stats
 
@@ -300,24 +301,20 @@ def state_to_features(self, game_state: dict) -> list:
                 continue
 
             # Skip coins that spawn/are at agent location
-            if self_position == tuple(coin):
+            if self_position == coin:
                 continue
             temp_coin_stats = get_distance_and_move(start=self_position,
-                                                    end=tuple(coin),
+                                                    end=coin,
                                                     graph=graph,
                                                     nr_nodes=15 * 15)
 
-            if idx == 0:
+            if idx == 0 or (idx == 1 and coins[0] == self_position):
 
                 closest_coin_stats = temp_coin_stats
                 closest_coin = coin
 
             else:
-                try:
-                    if temp_coin_stats[1] < closest_coin_stats[1]:
-                        closest_coin_stats = temp_coin_stats
-                        closest_coin = coin
-                except UnboundLocalError:
+                if temp_coin_stats[1] < closest_coin_stats[1]:
                     closest_coin_stats = temp_coin_stats
                     closest_coin = coin
 
