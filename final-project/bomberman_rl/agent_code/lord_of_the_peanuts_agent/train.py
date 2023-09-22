@@ -110,9 +110,7 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
     reward = reward_from_events(self, events)
 
     # add transitions to the replay buffer (store the state, action, next state, and reward)
-    self.transitions.append(
-        Transition(state_to_features(self, old_game_state)[0], self_action, state_to_features(self, new_game_state)[0],
-                   reward))
+    self.transitions.append(Transition(old_state, self_action, new_state, reward))
 
     # Gradually decrease epsilon
     self.epsilon = max(self.epsilon * self.epsilon_decay, self.min_epsilon)
