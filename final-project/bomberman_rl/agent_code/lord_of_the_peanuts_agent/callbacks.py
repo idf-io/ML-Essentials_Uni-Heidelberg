@@ -323,13 +323,7 @@ def state_to_features(self, game_state: dict) -> list:
 
 
     # ADD FEATURE: Agent's position in binary
-    x = list("{0:04b}".format(self_position[0]))
-    x = [int(i) for i in x]
-    y = list("{0:04b}".format(self_position[1]))
-    y = [int(i) for i in y]
-
-    self_position_bin = [*x, *y]
-    features.extend(self_position_bin)
+    features.extend(self_position)
 
     try:
         # ADD FEATURE: Distance of closest coin to agent
