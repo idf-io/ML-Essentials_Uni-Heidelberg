@@ -7,13 +7,13 @@ from datetime import datetime
 
 from collections import deque
 
-ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT']
+ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT', 'BOMB']
 
 
 def setup(self):
     # self.self_positions = deque(maxlen=30)
     if self.args.command_name == "play":
-        qtable_load = self.args.qtable
+        qtable_load = "hand-in.pkl"
 
     if self.train and not os.path.isfile(qtable_load):
         self.logger.info("Setting up Q-table from scratch.")
@@ -26,11 +26,15 @@ def setup(self):
 
 def act(self, game_state: dict) -> str:
     if game_state is None:
-        return np.random.choice(ACTIONS)
+        # return np.random.choice(ACTIONS)
+        idx = np.random.choice(6, 1, p=[0.18, 0.18, 0.18, 0.18, 0.18, 0.1])
+        return ACTIONS[int(idx)]
 
     state = state_to_features(self, game_state)[0]
     if self.train and np.random.rand() < self.epsilon:
-        return np.random.choice(ACTIONS)
+        idx = np.random.choice(6, 1, p=[0.18, 0.18, 0.18, 0.18, 0.18, 0.1])
+        return ACTIONS[int(idx)]
+        # return np.random.choice(ACTIONS)
 
     q_values = self.q_table.get(tuple(state), {a: 0.0 for a in ACTIONS})
     max_q = max(q_values.values())
@@ -88,6 +92,7 @@ def state2position_features_cross(game_state, agent_position) -> list:
     cells = (
         (agent_position[0] - 1, agent_position[1]),
         (agent_position[0] + 1, agent_position[1]),
+        (agent_position[0], agent_position[1]),
         (agent_position[0], agent_position[1] - 1),
         (agent_position[0], agent_position[1] + 1)
     )
@@ -402,6 +407,9 @@ def state_to_features(self, game_state: dict) -> list:
     except UnboundLocalError:
         features.extend([0] * 2)
         distance = 0
+
+    # ADD FEATURE: loaded (bomb)
+    features.append(int(game_state['self'][2]))
 
     return [np.array(features), distance]
 
