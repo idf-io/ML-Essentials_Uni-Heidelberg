@@ -377,6 +377,17 @@ def state_to_features(self, game_state: dict) -> list:
                     closest_coin_stats = temp_coin_stats
                     closest_coin = coin
 
+        # ADD FEATURE: closes coin pos
+        for pos in closest_coin:
+
+            if pos == 0:
+                features.append(0)
+            else:
+                features.append((pos - 1) // 3)  # 5 Bins
+
+    else:
+        features.extend([0] * 2)
+
 
     # ADD FEATURE: Agent's position in binary
     for pos in self_position:
@@ -391,10 +402,12 @@ def state_to_features(self, game_state: dict) -> list:
         # ADD FEATURE: Distance of closest coin to agent
         distance = closest_coin_stats[1]
 
-        if distance == 0:
-            features.append(0)
-        else:
-            features.append((distance - 1) // 4)    # 7 bins
+        diff_i = features[-4] - features[-2]
+        diff_j = features[-3] - features[-1]
+
+        bin_distance = abs(diff_i) + abs(diff_j)
+        features.append(bin_distance)
+
 
 
         # ADD FEATURE: Move closer to closest coin
