@@ -28,7 +28,7 @@ def act(self, game_state: dict) -> str:
     if game_state is None:
         return np.random.choice(ACTIONS)
 
-    state = state_to_features(self, game_state)
+    state = state_to_features(self, game_state)[0]
     if self.train and np.random.rand() < self.epsilon:
         return np.random.choice(ACTIONS)
 
@@ -306,7 +306,7 @@ def get_distance_and_move(start: tuple, end: tuple, graph: dict, nr_nodes: int):
     return (move, distance, shortest_path)
 
 
-def state_to_features(self, game_state: dict) -> np.array:
+def state_to_features(self, game_state: dict) -> list:
     if game_state is None:
         return None
 
@@ -389,14 +389,21 @@ def state_to_features(self, game_state: dict) -> np.array:
 
     try:
         # ADD FEATURE: Distance of closest coin to agent
-        features.append(closest_coin_stats[1])
+        distance = closest_coin_stats[1]
+
+        if distance == 0:
+            features.append(0)
+        else:
+            features.append((distance - 1) // 4)    # 7 bins
+
 
         # ADD FEATURE: Move closer to closest coin
         features.append(closest_coin_stats[0])
     except UnboundLocalError:
         features.extend([0] * 2)
+        distance = 0
 
-    return np.array(features)
+    return [np.array(features), distance]
 
 
 def field2bomb(game_state: dict, power=BOMB_POWER, board_size=COLS):

@@ -86,8 +86,8 @@ def is_action_invalid(state, action):
 
 def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_state: dict, events: List[str]):
     self.logger.debug(f'Encountered game event(s) {", ".join(map(repr, events))} in step {new_game_state["step"]}')
-    old_state = state_to_features(self, old_game_state)
-    new_state = state_to_features(self, new_game_state)
+    old_state, old_coin_dist = state_to_features(self, old_game_state)
+    new_state, new_coin_dist = state_to_features(self, new_game_state)
 
     """
     if new_state[27] == 1:
@@ -96,15 +96,15 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
 
     # Append custom events for moving towards/away from coin
     if e.COIN_COLLECTED not in events:
-        if new_state[len(new_state) - 2] < old_state[len(old_state) - 2]:
+        if new_coin_dist < old_coin_dist:
             events.append(MOVE_CLOSER_TO_COIN)
-        elif new_state[len(new_state) - 2] > old_state[len(old_state) - 2]:
+        elif new_coin_dist > old_coin_dist:
             events.append(MOVE_AWAY_FROM_COIN)
     # Calculate reward based on events
     reward = reward_from_events(self, events)
     # add transitions to the replay buffer (store the state, action, next state, and reward)
     self.transitions.append(
-        Transition(state_to_features(self, old_game_state), self_action, state_to_features(self, new_game_state),
+        Transition(state_to_features(self, old_game_state)[0], self_action, state_to_features(self, new_game_state)[0],
                    reward))
     # Gradually decrease epsilon
     self.epsilon = max(self.epsilon * self.epsilon_decay, self.min_epsilon)
@@ -114,7 +114,7 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
     self.logger.debug(f'Encountered event(s) {", ".join(map(repr, events))} in final step')
     update_q_values(self, self.gamma)
     reward = reward_from_events(self, events)
-    self.transitions.append(Transition(state_to_features(self, last_game_state), last_action, None, reward))
+    self.transitions.append(Transition(state_to_features(self, last_game_state)[0], last_action, None, reward))
 
 
 def reward_from_events(self, events: List[str]) -> float:
