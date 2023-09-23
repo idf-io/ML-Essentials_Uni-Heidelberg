@@ -7,7 +7,7 @@ from datetime import datetime
 
 from collections import deque
 
-ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT']
+ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT', 'BOMB']
 
 
 def setup(self):
@@ -285,7 +285,6 @@ def state_to_features(self, game_state: dict) -> list:
     features = state2position_features_cross(game_state=new_field,
                                              agent_position=self_position)
 
-
     coins = game_state['coins']
 
     if len(coins) > 0 and (coins != [self_position]):
@@ -318,25 +317,23 @@ def state_to_features(self, game_state: dict) -> list:
                     closest_coin_stats = temp_coin_stats
                     closest_coin = coin
 
-
     # ADD FEATURE: Agent's position in binary
     features.extend(self_position)
 
     try:
         # ADD FEATURE: Distance of closest coin to agent
-        distance = closest_coin_stats[1]
+        coin_distance = closest_coin_stats[1]
 
-        if distance == 0:
+        if coin_distance == 0:
             features.append(0)
         else:
-            features.append((distance - 1) // 4)    # 7 bins
-
+            features.append((coin_distance - 1) // 4)  # 7 bins
 
         # ADD FEATURE: Move closer to closest coin
         features.append(closest_coin_stats[0])
     except UnboundLocalError:
         features.extend([0] * 2)
-        distance = 0
+        coin_distance = 0
 
     return [np.array(features), distance]
 
