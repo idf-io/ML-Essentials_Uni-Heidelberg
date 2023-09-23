@@ -16,7 +16,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 import ast
 import re
-
+import os
 
 Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
 
@@ -39,14 +39,17 @@ def back2nparray(text):
 
     #print("1111111:",text)
     # , -> " "
-    text = text.replace(",", " ")
+    #text = text.replace(",", " ")
     #print("222222:", text)
     # delete \n
     text = text.replace('\n', '')
     #print("333333:", text)
     # add ','
     xs = re.sub('\s+', ',', text)
-    xs="["+xs[2:]
+    if (xs[1]==','):
+        xs="["+xs[2:]
+    else:
+        xs = "[" + xs[1:]
     #print("44444:", xs)
     # invert into numpy.array
     a = np.array(ast.literal_eval(xs))
@@ -90,7 +93,7 @@ def setup_training(self):
     # EPS_DECAY controls the rate of exponential decay of epsilon, higher means a slower decay
     # TAU is the update rate of the target network
     # LR is the learning rate of the ``AdamW`` optimizer
-    self.BATCH_SIZE = 64
+    self.BATCH_SIZE = 128
     self.GAMMA = 0.99
     self.EPS_START = 0.9
     self.EPS_END = 0.05
@@ -100,15 +103,29 @@ def setup_training(self):
 
     n_actions = len(ACTIONS)
 
-    self.n_observations = 29  # 3*9+2 game state /feature
+    self.n_observations = 19  # 3*9+2 game state /feature
 
+
+    ########load state_dict
     self.policy_net = DQN(self.n_observations, n_actions).to(device)
     self.target_net = DQN(self.n_observations, n_actions).to(device)
-    self.target_net.load_state_dict(self.policy_net.state_dict())
+
+    if not os.path.isfile("policy_net_state_dict.pth"):
+        pass
+    else:
+        policy_state_dict = torch.load('policy_net_state_dict.pth')
+        self.policy_net.load_state_dict(policy_state_dict)
+
+    if not os.path.isfile("target_net_state_dict.pth"):
+        self.target_net.load_state_dict(self.policy_net.state_dict())
+    else:
+        target_state_dict = torch.load('target_net_state_dict.pth')
+        self.target_net.load_state_dict(target_state_dict)
+
 
     self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=self.LR, amsgrad=True)
-    self.memory = ReplayMemory(1000)
-    print(len(self.memory))
+    self.memory = ReplayMemory(10000)
+    #print(len(self.memory))
     self.steps_done = 0
     self.episode_durations = []
 
@@ -126,6 +143,10 @@ def setup_training(self):
         self.memory.push(back2nparray(json_data[i][0]),action,back2nparray(json_data[i][2]),torch.tensor([int(json_data[i][3])]))
     #back2nparray
     #state_to_features(old_game_state), self_action, state_to_features(new_game_state), reward
+
+    pretrain(self)
+
+
     '''
     # Get the all the lines in file in a list
     action_log = []
@@ -140,6 +161,25 @@ def setup_training(self):
     #print("action_log:",action_log)
     #print("state_log:",state_log)
     '''
+
+def pretrain(self):
+    num_round=1000
+    for i in range(num_round):
+        optimize_model(self)
+
+        # Soft update of the target network's weights
+        # θ′ ← τ θ + (1 −τ )θ′
+        target_net_state_dict = self.target_net.state_dict()
+        policy_net_state_dict = self.policy_net.state_dict()
+        for key in policy_net_state_dict:
+            target_net_state_dict[key] = policy_net_state_dict[key] * self.TAU + target_net_state_dict[key] * (
+                        1 - self.TAU)
+        self.target_net.load_state_dict(target_net_state_dict)
+
+    #save state_dict
+    #torch.save(self.policy_net.state_dict(), 'policy_net_state_dict.pth')
+    #torch.save(self.target_net.state_dict(), 'target_net_state_dict.pth')
+
 
 
 def update_q_values(self, gamma):
@@ -201,7 +241,7 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
         state = next_state
         '''
 
-    reward = reward_from_events(self, events)
+    reward = reward_from_events( events)
 
     self.memory.push(torch.tensor(state_to_features(old_game_state)), convert_action(self_action), torch.tensor(state_to_features(new_game_state)), torch.tensor([int(reward)]))
 
@@ -222,25 +262,33 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
 def end_of_round(self, last_game_state: dict, last_action: str, events: List[str]):
     self.logger.debug(f'Encountered event(s) {", ".join(map(repr, events))} in final step')
     #update_q_values(self, self.gamma)
-    reward = reward_from_events(self, events)
+    reward = reward_from_events(events)
     self.transitions.append(Transition(torch.tensor(state_to_features(last_game_state)), last_action, None, torch.tensor([int(reward)])))
 
-def reward_from_events(self, events: List[str]) -> float:
+    torch.save(self.policy_net.state_dict(), 'policy_net_state_dict.pth')
+    torch.save(self.target_net.state_dict(), 'target_net_state_dict.pth')
+
+def reward_from_events( events: List[str]) -> float:
     game_rewards = {
-        e.COIN_COLLECTED: 2.0,
-        e.KILLED_OPPONENT: 3.0,
-        e.KILLED_SELF: -2.0,
-        e.SURVIVED_ROUND: 3.0,
-        e.COIN_FOUND: 1.0,
-        e.GOT_KILLED: -2.0,
-        e.CRATE_DESTROYED: 2.0,
-        PLACEHOLDER_EVENT: -0.1
+        e.COIN_COLLECTED: 200.0,
+        e.KILLED_OPPONENT: 0,
+        e.KILLED_SELF: 0,
+        e.SURVIVED_ROUND: 0,
+        e.COIN_FOUND: 0,
+        e.GOT_KILLED: 0,
+        e.CRATE_DESTROYED: 0,
+        #PLACEHOLDER_EVENT: 0,
+        e.INVALID_ACTION: -50.0,
+        #MOVE_CLOSER_TO_COIN: 100.0,
+        #MOVE_AWAY_FROM_COIN: -100.0,
+        e.WAITED: 0,
+        #GOT_STUCK: -100.0
     }
     reward_sum = 0.0
     for event in events:
         if event in game_rewards:
             reward_sum += game_rewards[event]
-    self.logger.info(f"Awarded {reward_sum} for events {', '.join(events)}")
+    #self.logger.info(f"Awarded {reward_sum} for events {', '.join(events)}")
     return reward_sum
 
 def optimize_model(self):
@@ -291,9 +339,12 @@ def optimize_model(self):
     # Compute the expected Q values
     expected_state_action_values = (next_state_values * self.GAMMA) + reward_batch
 
+    #print(state_action_values.shape)
+    #print(expected_state_action_values.unsqueeze(0).shape)
+
     # Compute Huber loss
     criterion = nn.SmoothL1Loss()
-    loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
+    loss = criterion(state_action_values, expected_state_action_values.unsqueeze(0))
 
     # Optimize the model
     self.optimizer.zero_grad()

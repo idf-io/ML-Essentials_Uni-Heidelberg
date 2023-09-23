@@ -8,6 +8,7 @@ from pathlib import Path
 from threading import Event
 from time import time
 from typing import List, Tuple, Dict
+from collections import deque
 
 import numpy as np
 
@@ -498,6 +499,7 @@ class BombeRLeWorld(GenericWorld):
             '''
             #print(a.last_game_state)
             old_game_state = state_to_features(a.last_game_state)
+            #print(old_game_state.size)
             action = a.last_action
             new_game_state = state_to_features(self.get_state_for_agent(a))
             if( new_game_state is None): pass
@@ -714,71 +716,309 @@ class GUI:
 
 #format new state
 ##############################################
-def state_to_features(game_state: dict) -> np.array:
+def state2position_features_cross(game_state, agent_position) -> list:
+    """
+    Convert the game_state to an array of features describing the agent's surroundings.
+    Only take the tiles above, below, left and right from the agent.
+    Input:
+    - game_state: np.array
+    - agent_position: list
+    Output:
+    - features: list (len=12=4*3)
+    """
 
+    features = []
+
+    # Define relevant cells
+    cells = (
+        (agent_position[0] - 1, agent_position[1]),
+        (agent_position[0] + 1, agent_position[1]),
+        (agent_position[0], agent_position[1]),
+        (agent_position[0], agent_position[1] - 1),
+        (agent_position[0], agent_position[1] + 1)
+    )
+
+    for c in cells:
+
+        assert not (c[0] < 0 or c[0] >= game_state.shape[0] or c[1] < 0 or c[1] >= game_state.shape[1]), \
+            (f"\n"
+             f"c[0]>=0 and c[0]<game_state.shape[0]:\n"
+             f"\tc[0] = {c[0]}\n"
+             f"\tgame_state.shape[0] = {game_state.shape[0]}\n"
+             f"c[1]>=0 and c[1]<game_state.shape[0]:\n"
+             f"\tc[1] = {c[1]}\n"
+             f"\tgame_state.shape[1] = {game_state.shape[1]}")
+
+        cell = game_state[c]
+
+        # Create feature matrix: Code surrounding tiles' states in binary
+
+        if cell == 2:
+            # Bomb
+            features.extend([1, 0, 0])
+
+        elif cell == 1:
+            # Crate
+            features.extend([0, 1, 0])
+
+        elif cell == 0:
+            # Empty tile
+            features.extend([0, 1, 1])
+
+        elif cell == -1:
+            # Wall
+            features.extend([1, 1, 0])
+
+        elif cell == 3:
+            # Coin
+            features.extend([0, 0, 1])
+
+        else:
+            assert False, f"Cell value {cell} not expected nor covered in map above."
+
+    return features
+
+
+def state2position_features_rings(game_state, agent_position, layers: int = 1) -> list:
+    """
+    Convert the game_state to an array of features describing the agent's surroundings
+    Input:
+    - game_state: np.array
+    - agent_position: list
+    - layers: amount of tiles to consider in a radial distance from the agent
+    Output:
+    - features: list (len=24=3*8)
+    """
+
+    features = []
+
+    for x in range(agent_position[0] - layers, agent_position[0] + layers + 1):
+        for y in range(agent_position[1] - layers, agent_position[1] + layers + 1):
+
+            assert not (x < 0 or x >= game_state.shape[0] or y < 0 or y >= game_state.shape[1]), \
+                (f"\n"
+                 f"x>=0 and x<game_state.shape[0]:\n"
+                 f"\tx = {x}\n"
+                 f"\tgame_state.shape[0] = {game_state.shape[0]}\n"
+                 f"y>=0 and y<game_state.shape[0]:\n"
+                 f"\ty = {y}\n"
+                 f"\tgame_state.shape[1] = {game_state.shape[1]}")
+
+            cell = game_state[x, y]
+
+            # Create feature matrix: Code surrounding tiles' states in binary
+
+            if cell == 2:
+                # Bomb
+                features.extend([1, 0, 0])
+
+            elif cell == 1:
+                # Crate
+                features.extend([0, 1, 0])
+
+            elif cell == 0:
+                # Empty tile
+                features.extend([0, 1, 1])
+
+            elif cell == -1:
+                # Wall
+                features.extend([1, 1, 0])
+
+            elif cell == 3:
+                # Coin
+                features.extend([0, 0, 1])
+
+            else:
+                assert False, f"Cell value {cell} not expected nor covered in map above."
+
+    # Remove centre cell
+    centre_cell = int(len(features) / 2)
+    del features[centre_cell - 1: centre_cell + 2]
+
+    return features
+
+
+# TO-DO:  make function for when we test hyperparameters
+#     position = np.array(self_position, dtype="int")
+#     nearest_coin = coins[np.argmin(np.sum(np.abs(coins - position), axis=1))]
+
+
+def array2graph(array, nogo: list = [-1, 1]) -> dict:
+    graph = {}
+
+    for x in range(array.shape[0]):
+        for y in range(array.shape[1]):
+
+            if array[x, y] not in nogo:
+
+                node = (x, y)
+                edges = []
+
+                cells = (
+                    (x - 1, y),
+                    (x + 1, y),
+                    (x, y - 1),
+                    (x, y + 1)
+                )
+
+                for c in cells:
+
+                    if c[0] < 0 or c[0] > array.shape[0]:
+                        continue
+
+                    if c[1] < 0 > array.shape[1]:
+                        continue
+
+                    if array[c[0], c[1]] in nogo:
+                        continue
+
+                    edges.append(c)
+
+                graph[node] = tuple(edges)
+
+    return graph
+
+
+def breadth_first_search(graph: dict, start: tuple, end: tuple, nr_nodes: int):
+
+
+    visited = deque(maxlen=nr_nodes)
+    queue = deque(maxlen=nr_nodes)
+    prev = {}
+
+    visited.append(start)
+    queue.append(start)
+
+    while queue:
+
+        node = queue.popleft()
+
+        if node == end:
+            return prev
+
+        for edge in graph[node]:
+
+            if edge not in visited:
+                queue.append(edge)
+                visited.append(edge)
+                prev[edge] = node
+
+    return {}
+
+
+def reconstruct_path(start: tuple, end: tuple, prev: dict):
+    shortest_path = []
+
+    i = end
+
+    while True:
+
+        shortest_path.append(i)  # Add the current node to the path
+
+        print("i:",i)
+
+        i = prev[i]  # Move to the predecessor (parent) node
+        if i == start:
+            shortest_path.append(i)
+            break
+
+    shortest_path.reverse()
+
+    if shortest_path[0] == start:
+        return tuple(shortest_path)
+
+    return ()
+
+
+def get_distance_and_move(start: tuple, end: tuple, graph: dict, nr_nodes: int):
+    prev = breadth_first_search(graph, start, end, nr_nodes)
+
+    print("prev:",prev)
+
+    shortest_path = reconstruct_path(start, end, prev)
+
+    next_cell = shortest_path[1]
+
+    if next_cell[0] - start[0] == 1:
+        # Pseudo-down
+        move = 1
+
+    if next_cell[0] - start[0] == -1:
+        # Pseudo-up
+        move = 2
+
+    if next_cell[1] - start[1] == 1:
+        # Pseudo-right
+        move = 3
+
+    if next_cell[1] - start[1] == -1:
+        # Pseudo-right
+        move = 4
+
+    distance = len(shortest_path) - 1
+
+    return (move, distance, shortest_path)
+
+
+def state_to_features(game_state: dict) -> list:
     if game_state is None:
         return None
 
-    #reset the field to accelerate the algorithm
-    field = game_state["field"]
+
+    #print(game_state)
+
     self_position = game_state["self"][3]
     new_field = field2bomb(game_state)
     new_field = field2coin(game_state, new_field)
+    features = state2position_features_cross(game_state=new_field,
+                                             agent_position=self_position)
 
-    # !!think more about the features, such as vector to all coins
+    coins = game_state['coins']
 
-    # reduce the feature
-    # layers=0 means that only consider the information of actual field
-    layers=1
-    features = []
-    #max(bomb[0][0]-power,0):min(bomb[0][0]+power+1
-    for x in range(self_position[0]-layers,self_position[0]+layers+1):
-        for y in range(self_position[1]-layers,self_position[1]+layers+1):
-            #-1 means the border of the map
-            #-2 means expetional situation
-            #we wont have -2
-            #we do this because we want feature have a fixed length
-            #print(x,y)
-            if (x<0 or x>=new_field.shape[0] or y<0 or y>=new_field.shape[1]):
-                cell=-2
-            else:
-                cell = new_field[x, y]
-            if cell == 2:
-                features.extend([1, 0, 0])
-            elif cell == 1:
-                features.extend([0, 1, 0])
-            elif cell == 0:
-                features.extend([0, 1, 1])
-            elif cell == -1:
-                features.extend([1, 1, 0])
-            elif cell == 3:
-                features.extend([0, 0, 1])
-            else:
-                features.extend([1, 1, 1])
+    # ADD FEATURE: Agent's position in binary
+    features.extend(self_position)
 
-    features.append(self_position[0])
-    features.append(self_position[1])
-    #print(features)
+
+    # ADD FEATURE: loaded (bomb)
+    features.append(int(game_state['self'][2]))
+
+    # ADD FEATURE: distance to closest bomb
+    bomb_distances = []  # To store distances to bombs
+    for bomb in game_state["bombs"]:
+        bomb_pos = bomb[0]
+        manhattan_dist = abs(bomb_pos[0] - self_position[0]) + abs(bomb_pos[1] - self_position[1])
+        bomb_distances.append(manhattan_dist)
+
+    # Use the minimum Manhattan distance to the nearest bomb
+    if bomb_distances:
+        nearest_bomb_dist = min(bomb_distances)
+        bomb_distance = nearest_bomb_dist
+        features.append(nearest_bomb_dist)
+    else:
+        bomb_distance = 0
+        features.append(0)  # No bombs, so distance is 0
+
+
     return np.array(features)
 
 
 def field2bomb(game_state: dict, power=BOMB_POWER, board_size=COLS):
-
     """
     Convert the field array to include tiles where the explosion takes place next move.
     """
 
     bomb_mask = np.zeros([board_size, board_size])
-    #0 dimension indicates the position of bomb,1 dimension indicates the time before explosion (0 right before explosion)
+    # 0 dimension indicates the position of bomb,1 dimension indicates the time before explosion (0 right before explosion)
     for bomb in game_state["bombs"]:
         if bomb[1] == 0:
-            bomb_mask[max(bomb[0][0]-power,0):min(bomb[0][0]+power+1,board_size),bomb[0][1]] = 1
-            bomb_mask[bomb[0][0]][max(bomb[0][1]-power,0):min(bomb[0][1]+power+1,board_size)] = 1
+            bomb_mask[max(bomb[0][0] - power, 0):min(bomb[0][0] + power + 1, board_size), bomb[0][1]] = 1
+            bomb_mask[bomb[0][0]][max(bomb[0][1] - power, 0):min(bomb[0][1] + power + 1, board_size)] = 1
 
     new_field = (game_state["field"] == 0) & np.array(bomb_mask, dtype=bool)
     new_field = np.where(new_field, 2, game_state["field"])
 
     return new_field
+
 
 def field2coin(game_state: dict, new_field):
     """
@@ -789,24 +1029,31 @@ def field2coin(game_state: dict, new_field):
     coins = game_state["coins"]
 
     for coin in coins:
-        if new_field[coin[0]][coin[1]] == 0 :
+        if new_field[coin[0]][coin[1]] == 0:
             new_field[coin[0]][coin[1]] = 3
 
     return new_field
 
+
 def reward_from_events(events: List[str]) -> float:
     game_rewards = {
-        e.COIN_COLLECTED: 2.0,
-        e.KILLED_OPPONENT: 3.0,
-        e.KILLED_SELF: -2.0,
-        e.SURVIVED_ROUND: 3.0,
-        e.COIN_FOUND: 1.0,
-        e.GOT_KILLED: -2.0,
-        e.CRATE_DESTROYED: 2.0,
-        #PLACEHOLDER_EVENT: -0.1
+        e.COIN_COLLECTED: 200.0,
+        e.KILLED_OPPONENT: 0,
+        e.KILLED_SELF: 0,
+        e.SURVIVED_ROUND: 0,
+        e.COIN_FOUND: 0,
+        e.GOT_KILLED: 0,
+        e.CRATE_DESTROYED: 0,
+        #PLACEHOLDER_EVENT: 0,
+        e.INVALID_ACTION: -50.0,
+        #MOVE_CLOSER_TO_COIN: 100.0,
+        #MOVE_AWAY_FROM_COIN: -100.0,
+        e.WAITED: 0,
+        #GOT_STUCK: -100.0
     }
     reward_sum = 0.0
     for event in events:
         if event in game_rewards:
             reward_sum += game_rewards[event]
+    #self.logger.info(f"Awarded {reward_sum} for events {', '.join(events)}")
     return reward_sum
