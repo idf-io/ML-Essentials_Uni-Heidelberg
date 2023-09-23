@@ -136,6 +136,13 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
     update_q_values(self, self.gamma)
     reward = reward_from_events(self, events)
     self.transitions.append(Transition(state_to_features(self, last_game_state)[0], last_action, None, reward))
+    # print("---")
+    # print(old_game_state['self'][3])
+    # print(old_game_state['bombs'])
+    # print(old_game_state['field'])
+    # print(old_state)
+    # print(self_action)
+    # print(events)
 
 
 def reward_from_events(self, events: List[str]) -> float:
