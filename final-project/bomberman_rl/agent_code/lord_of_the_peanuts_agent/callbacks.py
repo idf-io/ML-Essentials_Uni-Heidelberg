@@ -1,6 +1,7 @@
 import os
 import pickle
 import numpy as np
+import math
 import logging
 from settings import BOMB_POWER, COLS
 from datetime import datetime
@@ -275,6 +276,37 @@ def get_distance_and_move(start: tuple, end: tuple, graph: dict, nr_nodes: int):
     return (move, distance, shortest_path)
 
 
+def movement_away_bomb(agent_pos: tuple, bomb_pos: tuple) -> int:
+    """
+    Returns the direction the agent should take to move away from a bomb. Based on angles.
+    """
+    assert not agent_pos == bomb_pos
+
+    # Calculate angles between agent and bombs
+    angle = math.atan2(bomb_pos[1] - agent_pos[1], bomb_pos[0] - agent_pos[0])
+    if angle < 0:
+        angle = angle + (2 * math.pi)
+
+    # Correct for cartesian -> array coordinates
+    angle = angle - (math.pi / 2)
+
+    # Calculate the opposite direction (180 degrees away)
+    opposite_direction = (angle - math.pi) % (2 * math.pi)
+
+    if 0 <= opposite_direction < math.pi / 4:
+        return 1  # RIGHT
+    elif math.pi / 4 <= opposite_direction < 3 * math.pi / 4:
+        return 2  # UP
+    elif 3 * math.pi / 4 <= opposite_direction < 5 * math.pi / 4:
+        return 3  # LEFT
+    elif 5 * math.pi / 4 <= opposite_direction < 7 * math.pi / 4:
+        return 4  # DOWN
+    elif 7 * math.pi / 4 <= opposite_direction < 2 * math.pi:
+        return 1  # RIGHT
+    else:
+        assert False, f"Opposite direction{opposite_direction}, agent: {agent_pos}, bomb: {bomb_pos}"
+
+
 def state_to_features(self, game_state: dict) -> list:
     if game_state is None:
         return None
@@ -338,24 +370,50 @@ def state_to_features(self, game_state: dict) -> list:
     # ADD FEATURE: loaded (bomb)
     features.append(int(game_state['self'][2]))
 
-    # ADD FEATURE: distance to closest bomb
-    bomb_distances = []  # To store distances to bombs
-    for bomb in game_state["bombs"]:
-        bomb_pos = bomb[0]
-        manhattan_dist = abs(bomb_pos[0] - self_position[0]) + abs(bomb_pos[1] - self_position[1])
-        bomb_distances.append(manhattan_dist)
 
-    # Use the minimum Manhattan distance to the nearest bomb
-    if bomb_distances:
-        nearest_bomb_dist = min(bomb_distances)
-        bomb_distance = nearest_bomb_dist
-        features.append(nearest_bomb_dist)
+    # Closest bomb
+    if game_state['bombs']: # and not (len(game_state['bombs']) == 1 and game_state['bombs'][0][0] == self_position):
+
+        for idx, bomb in enumerate(game_state['bombs']):
+
+            # Skip coins that spawn/are at agent location
+            # if self_position == bomb[0]:
+            #     continue
+
+            # Manhattan distance
+            bomb_pos = bomb[0]
+
+            manhattan_dist = abs(bomb_pos[0] - self_position[0]) + abs(bomb_pos[1] - self_position[1])
+
+            if idx == 0: # or (game_state['bombs'][0][0] == self_position and idx == 1):
+
+                closest_bomb = bomb_pos
+                closest_bomb_dist = manhattan_dist
+
+            else:
+
+                if manhattan_dist < closest_bomb_dist:
+
+                    closest_bomb = bomb_pos
+                    closest_bomb_dist = manhattan_dist
+
+        # ADD FEATURE: distance to closest bomb
+        features.append(closest_bomb_dist)
+
+        # ADD FEATURE: move away of closest bomb
+        if closest_bomb != self_position:
+            away_direction = movement_away_bomb(self_position, closest_bomb)
+        else:
+            away_direction = 0
+
+        features.append(away_direction)
+
     else:
-        bomb_distance = 0
-        features.append(0)  # No bombs, so distance is 0
+        features.extend([0, -1]) # No bombs, so distance is 0
+        closest_bomb_dist = 0
 
 
-    return [np.array(features), coin_distance, bomb_distance]
+    return [np.array(features), coin_distance, closest_bomb_dist]
 
 
 def field2bomb(game_state: dict, power=BOMB_POWER, board_size=COLS):

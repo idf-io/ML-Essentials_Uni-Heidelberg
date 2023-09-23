@@ -116,7 +116,7 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
             events.append(MOVE_AWAY_FROM_COIN)
     # Append custom event for dropping bombs when it's not supposed to
     if self_action == 'BOMB':
-        if old_state[-2]:
+        if old_state[-3]:
             events.append(LOADED)
         else:
             events.append(NOT_LOADED)
