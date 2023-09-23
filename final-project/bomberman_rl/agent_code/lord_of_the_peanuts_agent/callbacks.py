@@ -335,7 +335,27 @@ def state_to_features(self, game_state: dict) -> list:
         features.extend([0] * 2)
         coin_distance = 0
 
-    return [np.array(features), distance]
+    # ADD FEATURE: loaded (bomb)
+    features.append(int(game_state['self'][2]))
+
+    # ADD FEATURE: distance to closest bomb
+    bomb_distances = []  # To store distances to bombs
+    for bomb in game_state["bombs"]:
+        bomb_pos = bomb[0]
+        manhattan_dist = abs(bomb_pos[0] - self_position[0]) + abs(bomb_pos[1] - self_position[1])
+        bomb_distances.append(manhattan_dist)
+
+    # Use the minimum Manhattan distance to the nearest bomb
+    if bomb_distances:
+        nearest_bomb_dist = min(bomb_distances)
+        bomb_distance = nearest_bomb_dist
+        features.append(nearest_bomb_dist)
+    else:
+        bomb_distance = 0
+        features.append(0)  # No bombs, so distance is 0
+
+
+    return [np.array(features), coin_distance, bomb_distance]
 
 
 def field2bomb(game_state: dict, power=BOMB_POWER, board_size=COLS):
