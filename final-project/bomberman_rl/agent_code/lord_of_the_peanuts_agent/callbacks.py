@@ -412,8 +412,35 @@ def state_to_features(self, game_state: dict) -> list:
         features.extend([0, -1]) # No bombs, so distance is 0
         closest_bomb_dist = 0
 
+    # ADD FEATURE: Opponent positions in bins
+    if game_state["others"]:
 
-    return [np.array(features), coin_distance, closest_bomb_dist]
+        for idx, opponent in enumerate(game_state["others"]):
+
+            # Manhattan distance
+            distance_to_opponent = np.abs(self_position[0] - opponent[3][0]) + np.abs(self_position[1] - opponent[3][1])
+
+            if idx == 0:
+
+                closest_agent = opponent
+                closest_opponent_dist = distance_to_opponent
+
+            else:
+                if distance_to_opponent < closest_opponent_dist:
+                    closest_agent = opponent
+                    closest_opponent_dist = distance_to_opponent
+
+
+            distance_to_opponent_bins = (closest_opponent_dist - 1) // 4 # 7 bins
+            features.append(distance_to_opponent_bins)
+
+    else:
+        features.append(0)
+        closest_opponent_dist = 0
+
+
+    return [np.array(features), coin_distance, closest_bomb_dist, closest_opponent_dist]
+
 
 
 def field2bomb(game_state: dict, power=BOMB_POWER, board_size=COLS):

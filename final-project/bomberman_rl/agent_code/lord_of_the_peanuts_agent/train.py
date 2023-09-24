@@ -17,6 +17,8 @@ LOADED = 'LOADED'
 NOT_LOADED = 'NOT_LOADED'
 MOVE_CLOSER_TO_BOMB = 'MOVE_CLOSER_TO_BOMB'
 MOVE_AWAY_FROM_BOMB = 'MOVE_AWAY_FROM_BOMB'
+MOVE_CLOSER_TO_OPPONENT = 'MOVE_CLOSER_TO_OPPONENT'
+MOVE_AWAY_FROM_OPPONENT = 'MOVE_AWAY_FROM_OPPONENT'
 
 
 def setup_training(self):
@@ -24,7 +26,7 @@ def setup_training(self):
         maxlen=TRANSITION_HISTORY_SIZE)  # maintain a replay buffer (a deque of transitions) to store experiences.
     self.epsilon = 1.0
     self.epsilon_decay = 0.999995
-    self.min_epsilon = 0.2
+    self.min_epsilon = 0.1667
     self.gamma = 0.9
     self.alpha = 0.1
 
@@ -100,13 +102,20 @@ def is_action_invalid(state, action):
 def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_state: dict, events: List[str]):
 
     self.logger.debug(f'Encountered game event(s) {", ".join(map(repr, events))} in step {new_game_state["step"]}')
-    old_state, old_coin_dist, old_bomb_distance = state_to_features(self, old_game_state)
-    new_state, new_coin_dist, new_bomb_distance = state_to_features(self, new_game_state)
+    old_state, old_coin_dist, old_bomb_distance, old_opponent_dist = state_to_features(self, old_game_state)
+    new_state, new_coin_dist, new_bomb_distance, new_opponent_dist = state_to_features(self, new_game_state)
 
+    # Append custom events for moving towards/away from bomb
     if new_bomb_distance < old_bomb_distance:
         events.append(MOVE_CLOSER_TO_BOMB)
     elif new_bomb_distance > old_bomb_distance:
         events.append(MOVE_AWAY_FROM_BOMB)
+
+    # Append custom events for moving towards/away from opponent
+    if new_opponent_dist < old_opponent_dist:
+        events.append(MOVE_CLOSER_TO_OPPONENT)
+    elif new_opponent_dist > old_opponent_dist:
+        events.append(MOVE_AWAY_FROM_OPPONENT)
 
     # Append custom events for moving towards/away from coin
     if e.COIN_COLLECTED not in events:
@@ -114,6 +123,7 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
             events.append(MOVE_CLOSER_TO_COIN)
         elif new_coin_dist > old_coin_dist:
             events.append(MOVE_AWAY_FROM_COIN)
+
     # Append custom event for dropping bombs when it's not supposed to
     if self_action == 'BOMB':
         if old_state[-3]:
@@ -144,7 +154,7 @@ def reward_from_events(self, events: List[str]) -> float:
         e.KILLED_OPPONENT: 0,
         e.KILLED_SELF: 0,
         e.SURVIVED_ROUND: 0,
-        e.COIN_FOUND: 0,
+        e.COIN_FOUND: 35,
         e.GOT_KILLED: -400.0,
         e.CRATE_DESTROYED: 0,
         PLACEHOLDER_EVENT: 0,
@@ -155,7 +165,9 @@ def reward_from_events(self, events: List[str]) -> float:
         LOADED: 35,
         NOT_LOADED: -20,
         MOVE_CLOSER_TO_BOMB: -150.0,
-        MOVE_AWAY_FROM_BOMB: 150.0
+        MOVE_AWAY_FROM_BOMB: 150.0,
+        MOVE_CLOSER_TO_OPPONENT: 75.0,
+        MOVE_AWAY_FROM_OPPONENT: -75.0
         #GOT_STUCK: -100.0
     }
     reward_sum = 0.0
