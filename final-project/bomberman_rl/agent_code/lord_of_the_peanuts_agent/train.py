@@ -151,7 +151,7 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
 def reward_from_events(self, events: List[str]) -> float:
     game_rewards = {
         e.COIN_COLLECTED: 200.0,
-        e.KILLED_OPPONENT: 0,
+        e.KILLED_OPPONENT: 250.0,
         e.KILLED_SELF: 0,
         e.SURVIVED_ROUND: 0,
         e.COIN_FOUND: 35,
