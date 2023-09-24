@@ -261,6 +261,10 @@ def reconstruct_path(start: tuple, end: tuple, prev: dict):
 
 def get_distance_and_move(start: tuple, end: tuple, graph: dict, nr_nodes: int):
     prev = breadth_first_search(graph, start, end, nr_nodes)
+
+    if not prev:
+        return (-1, -1, ())
+
     shortest_path = reconstruct_path(start, end, prev)
 
     next_cell = shortest_path[1]
@@ -350,11 +354,9 @@ def state_to_features(self, game_state: dict, prev_bombs: list) -> list:
 
         graph = array2graph(new_field)
 
-        for idx, coin in enumerate(coins):
+        exception_counter = 0
 
-            # Only calculate coins that are accessible
-            if new_field[coin[0]][coin[1]] == 0:
-                continue
+        for idx, coin in enumerate(coins):
 
             # Skip coins that spawn/are at agent location
             if self_position == coin:

@@ -24,8 +24,8 @@ MOVE_AWAY_FROM_OPPONENT = 'MOVE_AWAY_FROM_OPPONENT'
 def setup_training(self):
     self.transitions = deque(
         maxlen=TRANSITION_HISTORY_SIZE)  # maintain a replay buffer (a deque of transitions) to store experiences.
-    self.epsilon = 1.0
-    self.epsilon_decay = 0.999995
+    self.epsilon = 1.0 # 0.1667
+    self.epsilon_decay = 0.999995 #1.0
     self.min_epsilon = 0.1667
     self.gamma = 0.9
     self.alpha = 0.1
