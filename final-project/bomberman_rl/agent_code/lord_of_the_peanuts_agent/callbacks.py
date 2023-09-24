@@ -401,22 +401,20 @@ def state_to_features(self, game_state: dict) -> list:
         # ADD FEATURE: distance to closest bomb
         if closest_bomb_dist == 0:
             features.append(0)
+        elif closest_bomb_dist == 1:
+            features.append(1)
+        elif closest_bomb_dist == 2:
+            features.append(2)
+        elif closest_bomb_dist == 3:
+            features.append(3)
+        elif ( 3 < closest_bomb_dist and closest_bomb_dist <= 6):
+            features.append(4)
+        elif (6 < closest_bomb_dist and closest_bomb_dist <= 10):
+            features.append(5)
+        elif (10 < closest_bomb_dist and closest_bomb_dist <= 18):
+            features.append(6)
         else:
-            #5bins
-            if(float(closest_bomb_dist)/float(BOMB_POWER) < 0.5):
-                features.append(1)
-            elif (float(closest_bomb_dist) / float(BOMB_POWER) < 1):
-                features.append(2)
-            elif (float(closest_bomb_dist) / float(BOMB_POWER) < 1.5):
-                features.append(3)
-            elif (float(closest_bomb_dist) / float(BOMB_POWER) < 2):
-                features.append(4)
-            else:
-                features.append(5)
-        #print("dist:",closest_bomb_dist)
-        #print("ratio:",float(closest_bomb_dist) / float(BOMB_POWER))
-        #print("feature:",features[-1])
-        #features.append(closest_bomb_dist)
+            features.append(7)
 
         # ADD FEATURE: move away of closest bomb
         if closest_bomb != self_position:
