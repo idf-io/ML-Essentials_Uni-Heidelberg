@@ -156,7 +156,7 @@ def reward_from_events(self, events: List[str]) -> float:
         e.SURVIVED_ROUND: 0,
         e.COIN_FOUND: 35,
         e.GOT_KILLED: -400.0,
-        e.CRATE_DESTROYED: 0,
+        e.CRATE_DESTROYED: 15,
         PLACEHOLDER_EVENT: 0,
         e.INVALID_ACTION: -50.0,
         MOVE_CLOSER_TO_COIN: 100.0,
