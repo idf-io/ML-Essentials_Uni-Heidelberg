@@ -102,8 +102,8 @@ def is_action_invalid(state, action):
 def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_state: dict, events: List[str]):
 
     self.logger.debug(f'Encountered game event(s) {", ".join(map(repr, events))} in step {new_game_state["step"]}')
-    old_state, old_coin_dist, old_bomb_distance, old_opponent_dist = state_to_features(self, old_game_state)
-    new_state, new_coin_dist, new_bomb_distance, new_opponent_dist = state_to_features(self, new_game_state)
+    old_state, old_coin_dist, old_bomb_distance, old_opponent_dist = state_to_features(self, old_game_state, self.prev_bombs[0])
+    new_state, new_coin_dist, new_bomb_distance, new_opponent_dist = state_to_features(self, new_game_state, old_game_state['bombs'])
 
     # Append custom events for moving towards/away from bomb
     if new_bomb_distance < old_bomb_distance:
@@ -145,7 +145,7 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
     self.logger.debug(f'Encountered event(s) {", ".join(map(repr, events))} in final step')
     update_q_values(self, self.gamma)
     reward = reward_from_events(self, events)
-    self.transitions.append(Transition(state_to_features(self, last_game_state)[0], last_action, None, reward))
+    self.transitions.append(Transition(state_to_features(self, last_game_state, self.prev_bombs[0])[0], last_action, None, reward))
 
 
 def reward_from_events(self, events: List[str]) -> float:
