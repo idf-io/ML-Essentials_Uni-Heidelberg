@@ -388,6 +388,7 @@ def state_to_features(self, game_state: dict, prev_bombs: list) -> list:
 
         # ADD FEATURE: Move closer to closest coin
         features.append(closest_coin_stats[0])
+
     except UnboundLocalError:
         features.extend([0] * 2)
         coin_distance = 0
@@ -423,7 +424,22 @@ def state_to_features(self, game_state: dict, prev_bombs: list) -> list:
                     closest_bomb_dist = manhattan_dist
 
         # ADD FEATURE: distance to closest bomb
-        features.append(closest_bomb_dist)
+        if closest_bomb_dist == 0:
+            features.append(0)
+        elif closest_bomb_dist == 1:
+            features.append(1)
+        elif closest_bomb_dist == 2:
+            features.append(2)
+        elif closest_bomb_dist == 3:
+            features.append(3)
+        elif ( 3 < closest_bomb_dist and closest_bomb_dist <= 6):
+            features.append(4)
+        elif (6 < closest_bomb_dist and closest_bomb_dist <= 10):
+            features.append(5)
+        elif (10 < closest_bomb_dist and closest_bomb_dist <= 18):
+            features.append(6)
+        else:
+            features.append(7)
 
         # ADD FEATURE: move away of closest bomb
         if closest_bomb != self_position:
