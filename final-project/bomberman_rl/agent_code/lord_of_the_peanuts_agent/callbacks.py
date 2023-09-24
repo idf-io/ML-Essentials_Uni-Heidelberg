@@ -24,12 +24,22 @@ def setup(self):
         with open(qtable_load, "rb") as file:
             self.q_table = pickle.load(file)
 
+    self.prev_bombs = deque(maxlen=2)  # First entry = empty list to avoid first round problem
+    self.prev_bombs.append([])
 
 def act(self, game_state: dict) -> str:
+
+    # Save current round bomb positions for next round
+    self.prev_bombs.append([bomb for bomb in game_state['bombs'] if bomb[1] == 0])
+    # curr_active_bombs = []
+    # for bomb in game_state['bombs']:
+    #     if bomb[1] == 0:
+    #         curr_active_bombs.append(bomb)
+
     if game_state is None:
         return np.random.choice(ACTIONS)
 
-    state = state_to_features(self, game_state)[0]
+    state = state_to_features(self, game_state, self.prev_bombs[0])[0]
     if self.train and np.random.rand() < self.epsilon:
         return np.random.choice(ACTIONS)
 
@@ -307,12 +317,27 @@ def movement_away_bomb(agent_pos: tuple, bomb_pos: tuple) -> int:
         assert False, f"Opposite direction{opposite_direction}, agent: {agent_pos}, bomb: {bomb_pos}"
 
 
-def state_to_features(self, game_state: dict) -> list:
+def state_to_features(self, game_state: dict, prev_bombs: list) -> list:
     if game_state is None:
         return None
 
     self_position = game_state["self"][3]
     new_field = field2bomb(game_state)
+
+    # Update field with with previous round's explosion
+    if prev_bombs:
+
+        bomb_mask = np.zeros([COLS,COLS])
+
+        for bomb in prev_bombs:
+            if bomb[1] == 0:
+                bomb_mask[max(bomb[0][0] - BOMB_POWER, 0):min(bomb[0][0] + BOMB_POWER + 1, COLS), bomb[0][1]] = 1
+                bomb_mask[bomb[0][0]][max(bomb[0][1] - BOMB_POWER, 0):min(bomb[0][1] + BOMB_POWER + 1, COLS)] = 1
+
+        updated_mask = (new_field == 0) & np.array(bomb_mask, dtype=bool)
+        new_field = np.where(updated_mask, 2, new_field)
+
+    # Update field with coin locations
     new_field = field2coin(game_state, new_field)
     features = state2position_features_cross(game_state=new_field,
                                              agent_position=self_position)
