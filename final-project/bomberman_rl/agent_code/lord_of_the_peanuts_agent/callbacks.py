@@ -177,7 +177,9 @@ def state2position_features_rings(game_state, agent_position, layers: int = 1) -
 #     nearest_coin = coins[np.argmin(np.sum(np.abs(coins - position), axis=1))]
 
 
-def array2graph(array, nogo: list = [-1, 1]) -> dict:
+# def array2graph(array, self_pos: tuple, nogo: list = [-1, 1, 2]) -> dict:
+def array2graph(array, nogo: list = [-1, 1, 2]) -> dict:
+
     graph = {}
 
     for x in range(array.shape[0]):
@@ -360,13 +362,22 @@ def state_to_features(self, game_state: dict, prev_bombs: list) -> list:
 
             # Skip coins that spawn/are at agent location
             if self_position == coin:
+                exception_counter += 1
                 continue
+
+            if new_field[self_position] == 2:
+                exception_counter += 1
+                continue
+
             temp_coin_stats = get_distance_and_move(start=self_position,
                                                     end=coin,
                                                     graph=graph,
                                                     nr_nodes=15 * 15)
+            if not temp_coin_stats[2]:
+                exception_counter += 1
+                continue
 
-            if idx == 0 or (idx == 1 and coins[0] == self_position):
+            if idx == 0 or (idx == 1 and coins[0] == self_position) or (idx == 1 and new_field[coins[0]] == 2) or (idx == exception_counter):#closest_coin_stats[1] == -1:
 
                 closest_coin_stats = temp_coin_stats
                 closest_coin = coin
