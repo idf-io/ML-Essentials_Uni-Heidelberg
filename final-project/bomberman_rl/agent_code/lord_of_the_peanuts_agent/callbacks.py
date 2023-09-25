@@ -181,7 +181,7 @@ def state2position_features_rings(game_state, agent_position, layers: int = 1) -
 #     nearest_coin = coins[np.argmin(np.sum(np.abs(coins - position), axis=1))]
 
 
-def array2graph(array, nogo: list = [-1, 1]) -> dict:
+def array2graph(array, nogo: list = [-1, 1, 2]) -> dict:
     graph = {}
 
     for x in range(array.shape[0]):
@@ -265,6 +265,10 @@ def reconstruct_path(start: tuple, end: tuple, prev: dict):
 
 def get_distance_and_move(start: tuple, end: tuple, graph: dict, nr_nodes: int):
     prev = breadth_first_search(graph, start, end, nr_nodes)
+
+    if not prev:
+        return (-1, -1, ())
+
     shortest_path = reconstruct_path(start, end, prev)
 
     next_cell = shortest_path[1]
@@ -354,21 +358,29 @@ def state_to_features(self, game_state: dict, prev_bombs: list) -> list:
 
         graph = array2graph(new_field)
 
-        for idx, coin in enumerate(coins):
+        exception_counter = 0
 
-            # Only calculate coins that are accessible
-            if new_field[coin[0]][coin[1]] == 0:
-                continue
+        for idx, coin in enumerate(coins):
 
             # Skip coins that spawn/are at agent location
             if self_position == coin:
+                exception_counter += 1
                 continue
+
+            if new_field[self_position] == 2:
+                exception_counter += 1
+                continue
+
             temp_coin_stats = get_distance_and_move(start=self_position,
                                                     end=coin,
                                                     graph=graph,
                                                     nr_nodes=15 * 15)
+            if not temp_coin_stats[2]:
+                exception_counter += 1
+                continue
 
-            if idx == 0 or (idx == 1 and coins[0] == self_position):
+            if idx == 0 or (idx == 1 and coins[0] == self_position) or (idx == 1 and new_field[coins[0]] == 2) or (
+                    idx == exception_counter):  # closest_coin_stats[1] == -1:
 
                 closest_coin_stats = temp_coin_stats
                 closest_coin = coin
