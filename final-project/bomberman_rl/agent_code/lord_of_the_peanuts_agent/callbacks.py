@@ -29,6 +29,10 @@ def setup(self):
 
 def act(self, game_state: dict) -> str:
 
+    # Manual abort method
+    if os.path.isfile("abort.txt"):
+        assert False
+
     # Save current round bomb positions for next round
     self.prev_bombs.append([bomb for bomb in game_state['bombs'] if bomb[1] == 0])
     # curr_active_bombs = []
