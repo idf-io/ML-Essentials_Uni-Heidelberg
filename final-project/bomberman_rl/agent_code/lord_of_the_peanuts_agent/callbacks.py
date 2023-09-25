@@ -13,15 +13,13 @@ ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT', 'BOMB']
 
 def setup(self):
     # self.self_positions = deque(maxlen=30)
-    if self.args.command_name == "play":
-        qtable_load = self.args.qtable
 
-    if self.train and not os.path.isfile(qtable_load):
+    if self.train and not os.path.isfile("final-model-1_milestone2_v2-5_100000-rounds.pkl"):
         self.logger.info("Setting up Q-table from scratch.")
         self.q_table = {}  # Initialize Q-table
     else:
         self.logger.info("Loading Q-table from saved state.")
-        with open(qtable_load, "rb") as file:
+        with open("final-model-1_milestone2_v2-5_100000-rounds.pkl", "rb") as file:
             self.q_table = pickle.load(file)
 
     self.prev_bombs = deque(maxlen=2)  # First entry = empty list to avoid first round problem
