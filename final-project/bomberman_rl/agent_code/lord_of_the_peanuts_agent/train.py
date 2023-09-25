@@ -140,20 +140,21 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
 
 def reward_from_events(self, events: List[str]) -> float:
     game_rewards = {
-        e.COIN_COLLECTED: 200.0,
+        e.COIN_COLLECTED: 100.0,
         e.KILLED_OPPONENT: 0,
         e.KILLED_SELF: 0,
         e.SURVIVED_ROUND: 0,
-        e.COIN_FOUND: 0,
         e.GOT_KILLED: -400.0,
-        e.CRATE_DESTROYED: 0,
         PLACEHOLDER_EVENT: 0,
         e.INVALID_ACTION: -50.0,
         MOVE_CLOSER_TO_COIN: 100.0,
         MOVE_AWAY_FROM_COIN: -100.0,
         e.WAITED: 0,
+        e.BOMB_DROPPED: 40,
         LOADED: 35,
         NOT_LOADED: -20,
+        e.CRATE_DESTROYED: 20,
+        e.COIN_FOUND: 35,
         MOVE_CLOSER_TO_BOMB: -150.0,
         MOVE_AWAY_FROM_BOMB: 150.0
         #GOT_STUCK: -100.0
