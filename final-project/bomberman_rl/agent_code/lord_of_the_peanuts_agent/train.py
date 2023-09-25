@@ -129,6 +129,15 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
 
     # Gradually decrease epsilon
     self.epsilon = max(self.epsilon * self.epsilon_decay, self.min_epsilon)
+    # print("---")
+    # print(old_game_state['self'][3])
+    # print(old_game_state['coins'])
+    # print(old_game_state['bombs'])
+    # print(old_game_state['field'])
+    # print(old_state)
+    # print(self_action)
+    # print(reward)
+    # print(events)
 
 
 def end_of_round(self, last_game_state: dict, last_action: str, events: List[str]):
@@ -140,22 +149,23 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
 
 def reward_from_events(self, events: List[str]) -> float:
     game_rewards = {
-        e.COIN_COLLECTED: 200.0,
+        e.COIN_COLLECTED: 100.0,
         e.KILLED_OPPONENT: 0,
         e.KILLED_SELF: 0,
         e.SURVIVED_ROUND: 0,
-        e.COIN_FOUND: 0,
         e.GOT_KILLED: -400.0,
-        e.CRATE_DESTROYED: 0,
         PLACEHOLDER_EVENT: 0,
         e.INVALID_ACTION: -50.0,
         MOVE_CLOSER_TO_COIN: 100.0,
         MOVE_AWAY_FROM_COIN: -100.0,
         e.WAITED: 0,
-        LOADED: 35,
-        NOT_LOADED: -20,
-        MOVE_CLOSER_TO_BOMB: -150.0,
-        MOVE_AWAY_FROM_BOMB: 150.0
+        e.BOMB_DROPPED: 40,
+        LOADED: 20,
+        NOT_LOADED: -80,
+        e.CRATE_DESTROYED: 20,
+        e.COIN_FOUND: 35,
+        MOVE_CLOSER_TO_BOMB: -300.0,
+        MOVE_AWAY_FROM_BOMB: 300.0
         #GOT_STUCK: -100.0
     }
     reward_sum = 0.0
