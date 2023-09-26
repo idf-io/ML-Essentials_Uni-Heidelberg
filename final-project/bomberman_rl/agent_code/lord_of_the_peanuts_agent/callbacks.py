@@ -7,7 +7,7 @@ from datetime import datetime
 
 from collections import deque
 
-ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT']
+ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT', 'BOMB']
 
 
 def setup(self):
