@@ -23,8 +23,8 @@ def setup_training(self):
     self.transitions = deque(
         maxlen=TRANSITION_HISTORY_SIZE)  # maintain a replay buffer (a deque of transitions) to store experiences.
     self.epsilon = 1.0
-    self.epsilon_decay = 0.999995
-    self.min_epsilon = 0.2
+    self.epsilon_decay = 0.9995
+    self.min_epsilon = 0.4
     self.gamma = 0.9
     self.alpha = 0.1
 
@@ -142,18 +142,19 @@ def reward_from_events(self, events: List[str]) -> float:
     game_rewards = {
         e.COIN_COLLECTED: 200.0,
         e.KILLED_OPPONENT: 0,
-        e.KILLED_SELF: 0,
+        e.KILLED_SELF: -200,
         e.SURVIVED_ROUND: 0,
-        e.COIN_FOUND: 0,
-        e.GOT_KILLED: -400.0,
-        e.CRATE_DESTROYED: 0,
+        e.COIN_FOUND: 100,
+        e.GOT_KILLED: 0,
+        e.CRATE_DESTROYED: 10,
+        e.BOMB_DROPPED: 20,
         PLACEHOLDER_EVENT: 0,
         e.INVALID_ACTION: -50.0,
         MOVE_CLOSER_TO_COIN: 100.0,
         MOVE_AWAY_FROM_COIN: -100.0,
         e.WAITED: 0,
-        LOADED: 35,
-        NOT_LOADED: -20,
+        LOADED: 50,
+        NOT_LOADED: -50,
         MOVE_CLOSER_TO_BOMB: -150.0,
         MOVE_AWAY_FROM_BOMB: 150.0
         #GOT_STUCK: -100.0
