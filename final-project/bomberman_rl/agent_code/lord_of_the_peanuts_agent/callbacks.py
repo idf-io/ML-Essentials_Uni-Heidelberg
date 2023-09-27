@@ -206,8 +206,9 @@ def state_to_features(self, game_state: dict) -> np.array:
 
     # reduce the feature
 
-    features = state2position_features_cross(game_state=new_field,
-                                             agent_position=self_position)
+    features = state2position_features_rings(game_state=new_field,
+                                             agent_position=self_position,
+                                             layers=1)
 
     # layers = 1
     #
