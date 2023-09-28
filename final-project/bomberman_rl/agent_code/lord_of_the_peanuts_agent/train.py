@@ -72,13 +72,13 @@ def is_action_invalid(state, action):
     else:
         return False
     """
-    if action == 'LEFT' and all(state[0:3] == [1, 1, 0]):
+    if action == 'LEFT' and all(state[21:24] == [1, 1, 0]):
         return True
-    elif action == 'RIGHT' and all(state[3:6] == [1, 1, 0]):
+    elif action == 'RIGHT' and all(state[33:36] == [1, 1, 0]):
         return True
-    elif action == 'UP' and all(state[6:9] == [1, 1, 0]):
+    elif action == 'UP' and all(state[36:39] == [1, 1, 0]):
         return True
-    elif action == 'DOWN' and all(state[9:12] == [1, 1, 0]):
+    elif action == 'DOWN' and all(state[48:51] == [1, 1, 0]):
         return True
     else:
         return False

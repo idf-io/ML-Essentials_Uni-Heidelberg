@@ -143,6 +143,15 @@ def state2position_features_rings(game_state, agent_position, layers: int = 1) -
     - features: list (len=24=3*8)
     """
 
+    # Pad with another ring of walls
+    padded_gs = np.insert(game_state, 0, -1, axis=1)
+    padded_gs = np.insert(padded_gs, padded_gs.shape[0] + 1, -1, axis=1)
+    padded_gs = np.insert(padded_gs, 0, -1, axis=0)
+    game_state = np.insert(padded_gs, padded_gs.shape[0], -1, axis=0)
+
+    # Correct agent position
+    agent_position = list(map(lambda x: x+1, agent_position))
+
     features = []
 
     for x in range(agent_position[0] - layers, agent_position[0] + layers + 1):
@@ -206,8 +215,9 @@ def state_to_features(self, game_state: dict) -> np.array:
 
     # reduce the feature
 
-    features = state2position_features_cross(game_state=new_field,
-                                             agent_position=self_position)
+    features = state2position_features_rings(game_state=new_field,
+                                             agent_position=self_position,
+                                             layers=2)
 
     # layers = 1
     #
