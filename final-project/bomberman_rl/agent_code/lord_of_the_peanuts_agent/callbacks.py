@@ -12,6 +12,11 @@ ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT', 'BOMB']
 
 
 def setup(self):
+
+    # For M1 evaluation metrics
+    if not self.train:
+        self.empty_coins_counter = 0
+
     # self.self_positions = deque(maxlen=30)
     if self.args.command_name == "play":
         qtable_load = self.args.qtable
@@ -32,6 +37,23 @@ def act(self, game_state: dict) -> str:
     # Manual abort option
     if os.path.isfile("abort.txt"):
         assert False
+
+    # For M1 evaluation metrics
+    if not self.train:
+
+        if game_state['step'] == 1:
+            self.empty_coins_counter = 0
+
+
+        if not game_state['coins'] and self.empty_coins_counter == 1:
+
+            with open("../../results/win.log", "a") as f:
+                f.write(str(game_state['step'] - 1))
+                f.write("\n")
+
+        if not game_state['coins']:
+            self.empty_coins_counter += 1
+
 
     # Save current round bomb positions for next round
     self.prev_bombs.append([bomb for bomb in game_state['bombs'] if bomb[1] == 0])
