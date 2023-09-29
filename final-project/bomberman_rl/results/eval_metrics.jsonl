@@ -1,1 +1,3 @@
 {"match_name": "peaceful_agent", "invalid_moves": 0.3677875, "coins_mean": 18.859, "coins_std": 4.999311852645322, "kills_mean": 0.0, "kills_std": 0.0, "suicides_mean": 0.0, "suicides_std": 0.0, "metric1": 0.38}
+{"match_name": "2023-09-29_19-33-52_testt", "invalid_moves": 0.0133425, "coins_mean": 0.004, "coins_std": 0.063118935352238, "kills_mean": 0.0, "kills_std": 0.0, "suicides_mean": 1.0, "suicides_std": 0.0, "steps_mean": 10.831, "steps_std": 6.705105442869635, "metric1": 0.0}
+{"match_name": "2023-09-29_20-45-30_NEW", "invalid_moves": 4.81, "coins_mean": 0.0, "kills_mean": 0.0, "suicides_mean": 1.0, "steps_mean": 9.82, "score_mean": 0.0}
