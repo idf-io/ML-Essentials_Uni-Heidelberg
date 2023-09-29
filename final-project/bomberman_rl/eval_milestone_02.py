@@ -63,7 +63,7 @@ def run():
     with open(f"results/{match_name}.json", "r") as f:
         data = json.load(f)
 
-    invalid_moves = data['by_agent'][agent]['invalid'] / (n_rounds * 400)
+    invalid_moves = data['by_agent'][agent]['invalid'] / (n_rounds)
 
     coins = []
     kills = []
