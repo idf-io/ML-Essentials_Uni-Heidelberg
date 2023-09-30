@@ -39,21 +39,21 @@ def act(self, game_state: dict) -> str:
         assert False
 
     # For M1 evaluation metrics
-    if not self.train:
-
-        if game_state['step'] == 1:
-            self.empty_coins_counter = 0
-
-        manhd = abs(game_state['coins'][0][0] - game_state['self'][3][0]) + abs(game_state['coins'][0][1] - game_state['self'][3][1])
-
-        if len(game_state['coins']) == 1 and manhd == 1:
-            self.empty_coins_counter += 1
-
-        if len(game_state['coins']) == 1 and self.empty_coins_counter == 1:
-
-            with open("../../results/win.log", "a") as f:
-                f.write(str(game_state['step'] - 1))
-                f.write("\n")
+    # if not self.train:
+    #
+    #     if game_state['step'] == 1:
+    #         self.empty_coins_counter = 0
+    #
+    #     manhd = abs(game_state['coins'][0][0] - game_state['self'][3][0]) + abs(game_state['coins'][0][1] - game_state['self'][3][1])
+    #
+    #     if len(game_state['coins']) == 1 and manhd == 1:
+    #         self.empty_coins_counter += 1
+    #
+    #     if len(game_state['coins']) == 1 and self.empty_coins_counter == 1:
+    #
+    #         with open("../../results/win.log", "a") as f:
+    #             f.write(str(game_state['step'] - 1))
+    #             f.write("\n")
 
     # Save current round bomb positions for next round
     self.prev_bombs.append([bomb for bomb in game_state['bombs'] if bomb[1] == 0])
