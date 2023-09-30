@@ -27,7 +27,7 @@ def act(self, game_state: dict) -> str:
     if game_state is None:
         return np.random.choice(ACTIONS)
 
-    state = state_to_features(self, game_state)
+    state = state_to_features(self, game_state)[0]
     if self.train and np.random.rand() < self.epsilon:
         return np.random.choice(ACTIONS)
 
@@ -262,12 +262,10 @@ def state_to_features(self, game_state: dict) -> np.array:
         distance = np.abs(nearest_coin[0] - self_position[0]) + np.abs(
             nearest_coin[1] - self_position[1])
 
-        features.extend([distance])
-
     else:
-        features.extend([0] * 17)
+        features.extend([0] * 16)
 
-    return np.array(features)
+    return [np.array(features), distance]
 
 
 def field2bomb(game_state: dict, power=BOMB_POWER, board_size=COLS):
