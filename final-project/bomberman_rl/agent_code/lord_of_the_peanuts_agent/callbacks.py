@@ -14,8 +14,8 @@ ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT', 'BOMB']
 def setup(self):
 
     # For M1 evaluation metrics
-    if not self.train:
-        self.empty_coins_counter = 0
+    # if not self.train:
+    #     self.empty_coins_counter = 0
 
     # self.self_positions = deque(maxlen=30)
     if self.args.command_name == "play":
