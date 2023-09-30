@@ -6,7 +6,6 @@ import json
 import numpy as np
 
 # Manual settings
-seed = 13
 coin_count = 50
 agent_count = 1
 file_out = "results/eval_metrics.jsonl"
@@ -54,7 +53,7 @@ def run():
     n_rounds = args.n_rounds
     match_name = now_f + '_' + args.match_name
 
-    command = f"python main.py play --match-name {match_name} --n-rounds {n_rounds} --agents {agent} --seed {seed} --scenario loot-crate --no-gui --save-stats --qtable {qtable}"
+    command = f"python main.py play --match-name {match_name} --n-rounds {n_rounds} --agents {agent} --scenario loot-crate --no-gui --save-stats --qtable {qtable}"
     print(command)
   
     subprocess.run(command, shell="True")
@@ -63,7 +62,7 @@ def run():
     with open(f"results/{match_name}.json", "r") as f:
         data = json.load(f)
 
-    invalid_moves = data['by_agent'][agent]['invalid'] / (n_rounds)
+    invalid_moves = data['by_agent'][agent].get('invalid', 0) / (n_rounds)
 
     coins = []
     kills = []

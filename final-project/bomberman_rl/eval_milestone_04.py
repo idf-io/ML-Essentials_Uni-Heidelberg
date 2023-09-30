@@ -5,7 +5,6 @@ from datetime import datetime
 import json
 
 # Manual settings
-seed = 13
 coin_count = 9
 agent_count = 3
 file_out = "results/eval_metrics.jsonl"
@@ -31,7 +30,7 @@ def run():
     n_rounds = args.n_rounds
     match_name = now_f + '_' + args.match_name
 
-    command = f"python main.py play --match-name {match_name} --n-rounds {n_rounds} --agents {agent} rule_based_agent rule_based_agent rule_based_agent --seed {seed} --scenario classic --no-gui --save-stats --qtable {qtable}"
+    command = f"python main.py play --match-name {match_name} --n-rounds {n_rounds} --agents {agent} rule_based_agent rule_based_agent rule_based_agent --scenario classic --no-gui --save-stats --qtable {qtable}"
     print(command)
   
     subprocess.run(command, shell="True")
