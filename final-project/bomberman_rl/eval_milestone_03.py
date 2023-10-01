@@ -30,7 +30,7 @@ def run():
     n_rounds = args.n_rounds
     match_name = now_f + '_' + args.match_name
 
-    command = f"python main.py play --match-name {match_name} --n-rounds {n_rounds} --agents {agent} peaceful_agent peaceful_agent coin_collector_agent --scenario classic --no-gui --save-stats --qtable {qtable}"
+    command = f"python3 main.py play --match-name {match_name} --n-rounds {n_rounds} --agents {agent} peaceful_agent peaceful_agent coin_collector_agent --scenario classic --no-gui --save-stats --qtable {qtable}"
     print(command)
   
     subprocess.run(command, shell="True")
@@ -38,6 +38,9 @@ def run():
 
     with open(f"results/{match_name}.json", "r") as f:
         data = json.load(f)
+
+    if agent in ['peaceful_agent', 'random_agent', 'coin_collector_agent', 'rule_based_agent']:
+        agent = list(data['by_agent'].keys())[0]
 
     invalid_moves = data['by_agent'][agent].get('invalid', 0) / n_rounds
     coins_mean = data['by_agent'][agent].get('coins', 0) / n_rounds
