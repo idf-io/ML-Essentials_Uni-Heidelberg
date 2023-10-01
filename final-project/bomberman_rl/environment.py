@@ -496,19 +496,19 @@ class BombeRLeWorld(GenericWorld):
                 Transition(state_to_features(old_game_state), action, state_to_features(new_game_state), reward))
             ########
             '''
-            '''
-            #print(a.last_game_state)
-            old_game_state = state_to_features(a.last_game_state)
-            #print(old_game_state.size)
-            action = a.last_action
-            new_game_state = state_to_features(self.get_state_for_agent(a))
-            if( new_game_state is None): pass
-            else:new_game_state=str(new_game_state)
-            reward = reward_from_events(a.events)
-            #f.writelines(" ".join(str(i) for i in every_state))
-            datasets[a.name][time()]=Transition(str(old_game_state), action, new_game_state,reward)
-            ##############
-            '''
+
+            # #print(a.last_game_state)
+            # old_game_state = state_to_features(a.last_game_state)
+            # #print(old_game_state.size)
+            # action = a.last_action
+            # new_game_state = state_to_features(self.get_state_for_agent(a))
+            # if( new_game_state is None): pass
+            # else:new_game_state=str(new_game_state)
+            # reward = reward_from_events(a.events)
+            # #f.writelines(" ".join(str(i) for i in every_state))
+            # datasets[a.name][time()]=Transition(str(old_game_state), action, new_game_state,reward)
+            # ##############
+
             if a.train:
                 if not a.dead:
                     a.process_game_events(self.get_state_for_agent(a))
@@ -657,15 +657,15 @@ class GUI:
             color = np.int_((255 * (np.sin(3 * time()) / 3 + .66),
                              255 * (np.sin(4 * time() + np.pi / 3) / 3 + .66),
                              255 * (np.sin(5 * time() - np.pi / 3) / 3 + .66)))
-            '''
-            #############
-            global save_flag
-            if(save_flag==1):
-                with open('datasets_baseline_5000.json', 'a', encoding='utf8') as fp:
-                    json.dump(datasets[leading.display_name], fp, ensure_ascii=False)
-                save_flag=0
-            #############
-            '''
+
+            # #############
+            # global save_flag
+            # if(save_flag==1):
+            #     with open('datasets_baseline_5000.json', 'a', encoding='utf8') as fp:
+            #         json.dump(datasets[leading.display_name], fp, ensure_ascii=False)
+            #     save_flag=0
+            # #############
+
             self.render_text(leading.display_name, x_center, 320, color,
                              valign='top', halign='center', size='huge')
             self.render_text('has won the round!', x_center, 350, color,

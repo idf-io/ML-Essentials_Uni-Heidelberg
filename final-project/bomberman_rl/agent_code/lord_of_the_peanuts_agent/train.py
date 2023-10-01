@@ -135,7 +135,7 @@ def setup_training(self):
 
 
     ########################
-    with open('../../datasets.json', 'r', encoding='utf8') as fp:
+    with open('../../datasets_baseline_5000.json', 'r', encoding='utf8') as fp:
         json_data = json.load(fp)#, object_hook=jsonDecoder)
 
     #print(json_data)
@@ -144,6 +144,7 @@ def setup_training(self):
     for i in json_data:
         action=convert_action(json_data[i][1])
         #print(json_data[i])
+        print()
         self.memory.push(back2nparray(json_data[i][0]),action,back2nparray(json_data[i][2]),torch.tensor([int(json_data[i][3])]))
     #back2nparray
     #state_to_features(old_game_state), self_action, state_to_features(new_game_state), reward
@@ -316,8 +317,10 @@ def optimize_model(self):
     # (a final state would've been the one after which simulation ended)
     non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
                                             batch.next_state)), device=device, dtype=torch.bool)
-    non_final_next_states = torch.cat([s for s in batch.next_state
-                                       if s is not None])
+    tempppp=[s for s in batch.next_state if s is not None]
+    non_final_next_states = torch.cat(tempppp)[:self.BATCH_SIZE*self.n_observations]
+    #print("333333",non_final_next_states.shape)
+
     state_batch = torch.cat(batch.state)
     #print(batch.action)
     action_batch = torch.cat(batch.action)
