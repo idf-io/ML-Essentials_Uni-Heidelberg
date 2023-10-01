@@ -38,25 +38,33 @@ def tensor2str(action):
 
 def setup(self):
 
+    # For M1 evaluation metrics
+    # if not self.train:
+    #     self.empty_coins_counter = 0
 
-    self.epsilon = 1.0
-    self.learning_rate = 0.1  # Learning rate for Q-learning
-    self.discount_factor = 0.9  # Discount factor for future rewards
-    if self.train and  not os.path.isfile("my-saved-qtable.pkl"):
-        self.logger.info("Setting up Q-table from scratch.")
-        self.q_table = {} # Initialize Q-table
-    else:
-        #already saved some parameters
-        #the result of q-learning is q-table
-        self.logger.info("Loading Q-table from saved state.")
-        with open("my-saved-qtable.pkl", "rb") as file:
-            self.q_table = pickle.load(file)
-
-
+    self.GAMMA = 0.99
 
 
 
 def act(self, game_state: dict) -> str:
+    # # # For M1 evaluation metrics
+    # if not self.train:
+    #
+    # #
+    #     if game_state['step'] == 1:
+    #         self.empty_coins_counter = 0
+    #
+    #     manhd = abs(game_state['coins'][0][0] - game_state['self'][3][0]) + abs(game_state['coins'][0][1] - game_state['self'][3][1])
+    #
+    #     if len(game_state['coins']) == 1 and manhd == 1:
+    #          self.empty_coins_counter += 1
+    #
+    #     if len(game_state['coins']) == 1 and self.empty_coins_counter == 1:
+    #
+    #         with open("../../results/win.log", "a") as f:
+    #             f.write(str(game_state['step'] - 1))
+    #             f.write("\n")
+
 
     if game_state is None:
         return np.random.choice(ACTIONS)
@@ -85,6 +93,9 @@ def act(self, game_state: dict) -> str:
 
 
 def select_action(self,state):
+
+    #print(self)
+
     # will select an action accordingly to an epsilon greedy policy.
     # Simply put, we’ll sometimes use our model for choosing the action,
     # and sometimes we’ll just sample one uniformly. The probability of choosing

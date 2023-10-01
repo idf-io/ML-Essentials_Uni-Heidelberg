@@ -506,7 +506,7 @@ class BombeRLeWorld(GenericWorld):
             else:new_game_state=str(new_game_state)
             reward = reward_from_events(a.events)
             #f.writelines(" ".join(str(i) for i in every_state))
-            datasets[a.name][self.step]=Transition(str(old_game_state), action, new_game_state,reward)
+            datasets[a.name][time()]=Transition(str(old_game_state), action, new_game_state,reward)
             ##############
             '''
             if a.train:
@@ -661,7 +661,7 @@ class GUI:
             #############
             global save_flag
             if(save_flag==1):
-                with open('datasets.json', 'a', encoding='utf8') as fp:
+                with open('datasets_baseline_5000.json', 'a', encoding='utf8') as fp:
                     json.dump(datasets[leading.display_name], fp, ensure_ascii=False)
                 save_flag=0
             #############

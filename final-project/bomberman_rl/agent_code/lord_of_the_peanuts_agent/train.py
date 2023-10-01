@@ -75,6 +75,10 @@ def convert_action(action):
 
 
 def setup_training(self):
+
+    # print("-----train-----setup------")
+    # print(self)
+
     self.transitions = deque(maxlen=TRANSITION_HISTORY_SIZE) #maintain a replay buffer (a deque of transitions) to store experiences.
     self.learning_rate = 0.01
     self.discount_factor = 0.95
@@ -240,6 +244,9 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
         # Move to the next state
         state = next_state
         '''
+
+    # print("-----train-----act------")
+    # print(self)
 
     reward = reward_from_events( events)
 
