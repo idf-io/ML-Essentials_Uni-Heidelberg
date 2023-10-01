@@ -35,7 +35,7 @@ def jsonDecoder(Dict):
 def back2nparray(text):
 
     if(text is None):
-        return torch.zeros(29)
+        return torch.zeros(25)
 
     #print("1111111:",text)
     # , -> " "
@@ -103,7 +103,7 @@ def setup_training(self):
 
     n_actions = len(ACTIONS)
 
-    self.n_observations = 19  # 3*9+2 game state /feature
+    self.n_observations = 25  # 3*9+2 game state /feature
 
 
     ########load state_dict
@@ -131,7 +131,9 @@ def setup_training(self):
 
 
     ########################
-    with open('../../datasets.json', 'r', encoding='utf8') as fp:
+
+
+    with open('../../datasets_ALLFEATURE_10000.json', 'r', encoding='utf8') as fp:
         json_data = json.load(fp)#, object_hook=jsonDecoder)
 
     #print(json_data)
@@ -139,8 +141,9 @@ def setup_training(self):
 
     for i in json_data:
         action=convert_action(json_data[i][1])
-        #print(json_data[i])
-        self.memory.push(back2nparray(json_data[i][0]),action,back2nparray(json_data[i][2]),torch.tensor([int(json_data[i][3])]))
+        print(json_data[i])
+        if(len(back2nparray(json_data[i][0]))==25):
+            self.memory.push(back2nparray(json_data[i][0]),action,back2nparray(json_data[i][2]),torch.tensor([int(json_data[i][3])]))
     #back2nparray
     #state_to_features(old_game_state), self_action, state_to_features(new_game_state), reward
 
@@ -163,7 +166,7 @@ def setup_training(self):
     '''
 
 def pretrain(self):
-    num_round=1000
+    num_round=10000
     for i in range(num_round):
         optimize_model(self)
 
@@ -268,20 +271,26 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
     torch.save(self.policy_net.state_dict(), 'policy_net_state_dict.pth')
     torch.save(self.target_net.state_dict(), 'target_net_state_dict.pth')
 
-def reward_from_events( events: List[str]) -> float:
+def reward_from_events(events: List[str]) -> float:
     game_rewards = {
         e.COIN_COLLECTED: 200.0,
-        e.KILLED_OPPONENT: 0,
+        e.KILLED_OPPONENT: 250.0,
         e.KILLED_SELF: 0,
         e.SURVIVED_ROUND: 0,
-        e.COIN_FOUND: 0,
-        e.GOT_KILLED: 0,
-        e.CRATE_DESTROYED: 0,
+        e.COIN_FOUND: 35,
+        e.GOT_KILLED: -400.0,
+        e.CRATE_DESTROYED: 15,
         #PLACEHOLDER_EVENT: 0,
         e.INVALID_ACTION: -50.0,
         #MOVE_CLOSER_TO_COIN: 100.0,
         #MOVE_AWAY_FROM_COIN: -100.0,
         e.WAITED: 0,
+        #LOADED: 35,
+        #NOT_LOADED: -20,
+        #MOVE_CLOSER_TO_BOMB: -150.0,
+        #MOVE_AWAY_FROM_BOMB: 150.0,
+        #MOVE_CLOSER_TO_OPPONENT: 75.0,
+        #MOVE_AWAY_FROM_OPPONENT: -75.0
         #GOT_STUCK: -100.0
     }
     reward_sum = 0.0

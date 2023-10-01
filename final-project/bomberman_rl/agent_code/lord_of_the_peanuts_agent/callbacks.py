@@ -74,9 +74,10 @@ def act(self, game_state: dict) -> str:
     state_numpy=state_to_features(game_state)
     #invert into torch tensor
     state = torch.tensor(state_numpy, dtype=torch.float32, device=device).unsqueeze(0)
-
-    action = select_action(self,state)
-
+    if(len(state)==25):
+        action = select_action(self,state)
+    else:
+        return np.random.choice(ACTIONS)
     if (action not in ACTIONS):
         action=None
 
@@ -242,7 +243,9 @@ def state2position_features_rings(game_state, agent_position, layers: int = 1) -
 #     nearest_coin = coins[np.argmin(np.sum(np.abs(coins - position), axis=1))]
 
 
-def array2graph(array, nogo: list = [-1, 1]) -> dict:
+# def array2graph(array, self_pos: tuple, nogo: list = [-1, 1, 2]) -> dict:
+def array2graph(array, nogo: list = [-1, 1, 2]) -> dict:
+
     graph = {}
 
     for x in range(array.shape[0]):
@@ -326,6 +329,10 @@ def reconstruct_path(start: tuple, end: tuple, prev: dict):
 
 def get_distance_and_move(start: tuple, end: tuple, graph: dict, nr_nodes: int):
     prev = breadth_first_search(graph, start, end, nr_nodes)
+
+    if not prev:
+        return (-1, -1, ())
+
     shortest_path = reconstruct_path(start, end, prev)
 
     next_cell = shortest_path[1]
@@ -351,48 +358,209 @@ def get_distance_and_move(start: tuple, end: tuple, graph: dict, nr_nodes: int):
     return (move, distance, shortest_path)
 
 
-def state_to_features(game_state: dict) -> list:
+def movement_away_bomb(agent_pos: tuple, bomb_pos: tuple) -> int:
+    """
+    Returns the direction the agent should take to move away from a bomb. Based on angles.
+    """
+    assert not agent_pos == bomb_pos
+
+    # Calculate angles between agent and bombs
+    angle = math.atan2(bomb_pos[1] - agent_pos[1], bomb_pos[0] - agent_pos[0])
+    if angle < 0:
+        angle = angle + (2 * math.pi)
+
+    # Correct for cartesian -> array coordinates
+    angle = angle - (math.pi / 2)
+
+    # Calculate the opposite direction (180 degrees away)
+    opposite_direction = (angle - math.pi) % (2 * math.pi)
+
+    if 0 <= opposite_direction < math.pi / 4:
+        return 1  # RIGHT
+    elif math.pi / 4 <= opposite_direction < 3 * math.pi / 4:
+        return 2  # UP
+    elif 3 * math.pi / 4 <= opposite_direction < 5 * math.pi / 4:
+        return 3  # LEFT
+    elif 5 * math.pi / 4 <= opposite_direction < 7 * math.pi / 4:
+        return 4  # DOWN
+    elif 7 * math.pi / 4 <= opposite_direction < 2 * math.pi:
+        return 1  # RIGHT
+    else:
+        assert False, f"Opposite direction{opposite_direction}, agent: {agent_pos}, bomb: {bomb_pos}"
+
+
+def state_to_features( game_state: dict, prev_bombs: list) -> list:
     if game_state is None:
         return None
 
     self_position = game_state["self"][3]
     new_field = field2bomb(game_state)
+
+    # Update field with with previous round's explosion
+    if prev_bombs:
+
+        bomb_mask = np.zeros([COLS,COLS])
+
+        for bomb in prev_bombs:
+            if bomb[1] == 0:
+                bomb_mask[max(bomb[0][0] - BOMB_POWER, 0):min(bomb[0][0] + BOMB_POWER + 1, COLS), bomb[0][1]] = 1
+                bomb_mask[bomb[0][0]][max(bomb[0][1] - BOMB_POWER, 0):min(bomb[0][1] + BOMB_POWER + 1, COLS)] = 1
+
+        updated_mask = (new_field == 0) & np.array(bomb_mask, dtype=bool)
+        new_field = np.where(updated_mask, 2, new_field)
+
+    # Update field with coin locations
     new_field = field2coin(game_state, new_field)
     features = state2position_features_cross(game_state=new_field,
                                              agent_position=self_position)
 
     coins = game_state['coins']
 
+    if len(coins) > 0 and (coins != [self_position]):
 
+        # ADD FEATURES: closest coin stats
 
+        graph = array2graph(new_field)
 
+        exception_counter = 0
+
+        for idx, coin in enumerate(coins):
+
+            # Skip coins that spawn/are at agent location
+            if self_position == coin:
+                exception_counter += 1
+                continue
+
+            if new_field[self_position] == 2:
+                exception_counter += 1
+                continue
+
+            temp_coin_stats = get_distance_and_move(start=self_position,
+                                                    end=coin,
+                                                    graph=graph,
+                                                    nr_nodes=15 * 15)
+            if not temp_coin_stats[2]:
+                exception_counter += 1
+                continue
+
+            if idx == 0 or (idx == 1 and coins[0] == self_position) or (idx == 1 and new_field[coins[0]] == 2) or (idx == exception_counter):#closest_coin_stats[1] == -1:
+
+                closest_coin_stats = temp_coin_stats
+                closest_coin = coin
+
+            else:
+                if temp_coin_stats[1] < closest_coin_stats[1]:
+                    closest_coin_stats = temp_coin_stats
+                    closest_coin = coin
 
     # ADD FEATURE: Agent's position in binary
     features.extend(self_position)
 
+    try:
+        # ADD FEATURE: Distance of closest coin to agent
+        coin_distance = closest_coin_stats[1]
 
+        if coin_distance == 0:
+            features.append(0)
+        else:
+            features.append((coin_distance - 1) // 4)  # 7 bins
+
+        # ADD FEATURE: Move closer to closest coin
+        features.append(closest_coin_stats[0])
+
+    except UnboundLocalError:
+        features.extend([0] * 2)
+        coin_distance = 0
 
     # ADD FEATURE: loaded (bomb)
     features.append(int(game_state['self'][2]))
 
-    # ADD FEATURE: distance to closest bomb
-    bomb_distances = []  # To store distances to bombs
-    for bomb in game_state["bombs"]:
-        bomb_pos = bomb[0]
-        manhattan_dist = abs(bomb_pos[0] - self_position[0]) + abs(bomb_pos[1] - self_position[1])
-        bomb_distances.append(manhattan_dist)
 
-    # Use the minimum Manhattan distance to the nearest bomb
-    if bomb_distances:
-        nearest_bomb_dist = min(bomb_distances)
-        bomb_distance = nearest_bomb_dist
-        features.append(nearest_bomb_dist)
+    # Closest bomb
+    if game_state['bombs']: # and not (len(game_state['bombs']) == 1 and game_state['bombs'][0][0] == self_position):
+
+        for idx, bomb in enumerate(game_state['bombs']):
+
+            # Skip coins that spawn/are at agent location
+            # if self_position == bomb[0]:
+            #     continue
+
+            # Manhattan distance
+            bomb_pos = bomb[0]
+
+            manhattan_dist = abs(bomb_pos[0] - self_position[0]) + abs(bomb_pos[1] - self_position[1])
+
+            if idx == 0: # or (game_state['bombs'][0][0] == self_position and idx == 1):
+
+                closest_bomb = bomb_pos
+                closest_bomb_dist = manhattan_dist
+
+            else:
+
+                if manhattan_dist < closest_bomb_dist:
+
+                    closest_bomb = bomb_pos
+                    closest_bomb_dist = manhattan_dist
+
+        # ADD FEATURE: distance to closest bomb
+        if closest_bomb_dist == 0:
+            features.append(0)
+        elif closest_bomb_dist == 1:
+            features.append(1)
+        elif closest_bomb_dist == 2:
+            features.append(2)
+        elif closest_bomb_dist == 3:
+            features.append(3)
+        elif ( 3 < closest_bomb_dist and closest_bomb_dist <= 6):
+            features.append(4)
+        elif (6 < closest_bomb_dist and closest_bomb_dist <= 10):
+            features.append(5)
+        elif (10 < closest_bomb_dist and closest_bomb_dist <= 18):
+            features.append(6)
+        else:
+            features.append(7)
+
+        # ADD FEATURE: move away of closest bomb
+        if closest_bomb != self_position:
+            away_direction = movement_away_bomb(self_position, closest_bomb)
+        else:
+            away_direction = 0
+
+        features.append(away_direction)
+
     else:
-        bomb_distance = 0
-        features.append(0)  # No bombs, so distance is 0
+        features.extend([0, -1]) # No bombs, so distance is 0
+        closest_bomb_dist = 0
+
+    # ADD FEATURE: Opponent positions in bins
+    if game_state["others"]:
+
+        for idx, opponent in enumerate(game_state["others"]):
+
+            # Manhattan distance
+            distance_to_opponent = np.abs(self_position[0] - opponent[3][0]) + np.abs(self_position[1] - opponent[3][1])
+
+            if idx == 0:
+
+                closest_agent = opponent
+                closest_opponent_dist = distance_to_opponent
+
+            else:
+                if distance_to_opponent < closest_opponent_dist:
+                    closest_agent = opponent
+                    closest_opponent_dist = distance_to_opponent
+
+
+            distance_to_opponent_bins = (closest_opponent_dist - 1) // 4 # 7 bins
+            features.append(distance_to_opponent_bins)
+
+    else:
+        features.append(0)
+        closest_opponent_dist = 0
 
 
     return np.array(features)
+
 
 
 def field2bomb(game_state: dict, power=BOMB_POWER, board_size=COLS):
@@ -426,3 +594,32 @@ def field2coin(game_state: dict, new_field):
             new_field[coin[0]][coin[1]] = 3
 
     return new_field
+
+def reward_from_events(events: list[str]) -> float:
+    game_rewards = {
+        e.COIN_COLLECTED: 200.0,
+        e.KILLED_OPPONENT: 250.0,
+        e.KILLED_SELF: 0,
+        e.SURVIVED_ROUND: 0,
+        e.COIN_FOUND: 35,
+        e.GOT_KILLED: -400.0,
+        e.CRATE_DESTROYED: 15,
+        #PLACEHOLDER_EVENT: 0,
+        e.INVALID_ACTION: -50.0,
+        #MOVE_CLOSER_TO_COIN: 100.0,
+        #MOVE_AWAY_FROM_COIN: -100.0,
+        e.WAITED: 0,
+        #LOADED: 35,
+        #NOT_LOADED: -20,
+        #MOVE_CLOSER_TO_BOMB: -150.0,
+        #MOVE_AWAY_FROM_BOMB: 150.0,
+        #MOVE_CLOSER_TO_OPPONENT: 75.0,
+        #MOVE_AWAY_FROM_OPPONENT: -75.0
+        #GOT_STUCK: -100.0
+    }
+    reward_sum = 0.0
+    for event in events:
+        if event in game_rewards:
+            reward_sum += game_rewards[event]
+    #self.logger.info(f"Awarded {reward_sum} for events {', '.join(events)}")
+    return reward_sum
