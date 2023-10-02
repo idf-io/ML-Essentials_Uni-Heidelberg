@@ -35,7 +35,7 @@ def jsonDecoder(Dict):
 def back2nparray(text):
 
     if(text is None):
-        return torch.zeros(29)
+        return torch.zeros(25)
 
     #print("1111111:",text)
     # , -> " "
@@ -75,6 +75,8 @@ def convert_action(action):
 
 
 def setup_training(self):
+    self.prev_bombs = deque(maxlen=2)  # First entry = empty list to avoid first round problem
+    self.prev_bombs.append([])
 
     # print("-----train-----setup------")
     # print(self)
@@ -107,7 +109,7 @@ def setup_training(self):
 
     n_actions = len(ACTIONS)
 
-    self.n_observations = 19  # 3*9+2 game state /feature
+    self.n_observations = 25  # 3*9+2 game state /feature
 
 
     ########load state_dict
@@ -135,7 +137,7 @@ def setup_training(self):
 
 
     ########################
-    with open('../../datasets_baseline_5000.json', 'r', encoding='utf8') as fp:
+    with open('../../datasets_baseline_all_feature.json', 'r', encoding='utf8') as fp:
         json_data = json.load(fp)#, object_hook=jsonDecoder)
 
     #print(json_data)
@@ -144,7 +146,6 @@ def setup_training(self):
     for i in json_data:
         action=convert_action(json_data[i][1])
         #print(json_data[i])
-        print()
         self.memory.push(back2nparray(json_data[i][0]),action,back2nparray(json_data[i][2]),torch.tensor([int(json_data[i][3])]))
     #back2nparray
     #state_to_features(old_game_state), self_action, state_to_features(new_game_state), reward
@@ -251,7 +252,10 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
 
     reward = reward_from_events( events)
 
-    self.memory.push(torch.tensor(state_to_features(old_game_state)), convert_action(self_action), torch.tensor(state_to_features(new_game_state)), torch.tensor([int(reward)]))
+
+
+
+    self.memory.push(torch.tensor(state_to_features(old_game_state,self.prev_bombs[0])), convert_action(self_action), torch.tensor(state_to_features(new_game_state,self.prev_bombs[0])), torch.tensor([int(reward)]))
 
     # Perform one step of the optimization (on the policy network)
     optimize_model(self)
@@ -318,13 +322,40 @@ def optimize_model(self):
     non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
                                             batch.next_state)), device=device, dtype=torch.bool)
     tempppp=[s for s in batch.next_state if s is not None]
-    non_final_next_states = torch.cat(tempppp)[:self.BATCH_SIZE*self.n_observations]
-    #print("333333",non_final_next_states.shape)
+    temp_states=torch.cat(tempppp)
+    #print(temp_states.shape)
+    # print("1111",temp_states.shape[0])
+    # print("2222",self.BATCH_SIZE*self.n_observations)
+    #print(tempppp)
+    if (temp_states.shape[0] < self.BATCH_SIZE*self.n_observations):
+        non_final_next_states=torch.cat(tempppp+[tempppp[-1]]*(self.BATCH_SIZE*self.n_observations-temp_states.shape[0]))[:self.BATCH_SIZE*self.n_observations]
+    else:
+        non_final_next_states = temp_states[:self.BATCH_SIZE*self.n_observations]
+    # print("333333",non_final_next_states.shape)
 
-    state_batch = torch.cat(batch.state)
+
+    if(len(batch.state)<self.BATCH_SIZE*self.n_observations):
+        state_batch=torch.cat(batch.state+tuple([batch.state[-1]]*(self.BATCH_SIZE*self.n_observations-len(batch.state))))[:self.BATCH_SIZE*self.n_observations]
+    else:
+        state_batch = torch.cat(batch.state)[:self.BATCH_SIZE*self.n_observations]
     #print(batch.action)
-    action_batch = torch.cat(batch.action)
+    #
+    # if (len(batch.action) < self.BATCH_SIZE * self.n_observations):
+    #     action_batch = torch.cat(
+    #         batch.action + tuple([batch.action[-1]] * (self.BATCH_SIZE * self.n_observations - len(batch.action))))[
+    #                   :self.BATCH_SIZE * self.n_observations]
+    # else:
+    #     action_batch = torch.cat(batch.action)[:self.BATCH_SIZE*self.n_observations]
+
+    # if (len(batch.reward) < self.BATCH_SIZE * self.n_observations):
+    #     reward_batch = torch.cat(
+    #         batch.reward + tuple([batch.reward[-1]] * (self.BATCH_SIZE * self.n_observations - len(batch.reward))))[
+    #                   :self.BATCH_SIZE * self.n_observations]
+    # else:
+    #     reward_batch = torch.cat(batch.reward)[:self.BATCH_SIZE*self.n_observations]
+    #state_batch = torch.cat(batch.state)
     reward_batch = torch.cat(batch.reward)
+    action_batch = torch.cat(batch.action)
 
     #print(state_batch)
 
@@ -349,8 +380,8 @@ def optimize_model(self):
     # Compute the expected Q values
     expected_state_action_values = (next_state_values * self.GAMMA) + reward_batch
 
-    #print(state_action_values.shape)
-    #print(expected_state_action_values.unsqueeze(0).shape)
+    print(state_action_values.shape)
+    print(expected_state_action_values.unsqueeze(0).shape)
 
     # Compute Huber loss
     criterion = nn.SmoothL1Loss()
