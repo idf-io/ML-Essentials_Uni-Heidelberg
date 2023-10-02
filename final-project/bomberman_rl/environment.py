@@ -496,7 +496,7 @@ class BombeRLeWorld(GenericWorld):
                 Transition(state_to_features(old_game_state), action, state_to_features(new_game_state), reward))
             ########
             '''
-            '''
+
             #print(a.last_game_state)
             old_game_state = state_to_features(a.last_game_state)
             #print(old_game_state.size)
@@ -508,7 +508,7 @@ class BombeRLeWorld(GenericWorld):
             #f.writelines(" ".join(str(i) for i in every_state))
             datasets[a.name][time()]=Transition(str(old_game_state), action, new_game_state,reward)
             ##############
-            '''
+
             if a.train:
                 if not a.dead:
                     a.process_game_events(self.get_state_for_agent(a))
@@ -965,7 +965,7 @@ def state_to_features(game_state: dict) -> list:
         return None
 
 
-    #print(game_state)
+    print(game_state)
 
     self_position = game_state["self"][3]
     new_field = field2bomb(game_state)
